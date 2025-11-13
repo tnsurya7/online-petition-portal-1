@@ -2,14 +2,12 @@ import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env
 dotenv.config({ path: path.join(__dirname, ".env") });
-
-console.log("Connecting to:", process.env.DB_HOST);
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -18,7 +16,8 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT,
   database: process.env.DB_NAME,
   ssl: {
-    rejectUnauthorized: false  // 🔥 FIXES AIVEN SSL ERROR
+    ca: fs.readFileSync(path.join(__dirname, "aiven-ca.pem")),
+    rejectUnauthorized: true
   }
 });
 
