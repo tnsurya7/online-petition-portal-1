@@ -7,7 +7,10 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, ".env") });
+// Load environment variables
+dotenv.config();
+
+console.log("🔗 Connecting to:", process.env.DB_HOST);
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -16,7 +19,8 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT,
   database: process.env.DB_NAME,
   ssl: {
-    ca: fs.readFileSync(path.join(__dirname, "aiven-ca.pem")),
+    // READ FROM RENDER SECRET FILES
+    ca: fs.readFileSync("/etc/secrets/aiven-ca.pem"),
     rejectUnauthorized: true
   }
 });
