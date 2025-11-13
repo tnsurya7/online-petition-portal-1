@@ -70,7 +70,7 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
    */
   const refreshPetitionsFromDB = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/petitions');
+      const res = await fetch('https://petition-backend-ow0l.onrender.com/api/petitions');
       const data = await res.json();
 
       // 🔄 Normalize backend structure

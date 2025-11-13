@@ -35,4 +35,4 @@ const App: React.FC = () => {
 };
 
 export default App;
-export const API_BASE = "http://localhost:5001/api";
+export const API_BASE = "https://petition-backend-ow0l.onrender.com/api";

@@ -50,7 +50,7 @@ const SubmitPetitionForm: React.FC = () => {
         formDataToSend.append('file', formData.file);
       }
 
-      const response = await fetch('http://localhost:5001/api/petitions', {
+      const response = await fetch('https://petition-backend-ow0l.onrender.com/api/petitions', {
         method: 'POST',
         body: formDataToSend
       });
