@@ -1,0 +1,5 @@
+{
+  "name": "Online Petition Portal",
+  "description": "A bilingual (English/Tamil) web application to help citizens easily submit petitions or complaints online to the District Collector or MLA, featuring an AI assistant to help draft petitions.",
+  "requestFramePermissions": []
+}
