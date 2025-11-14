@@ -1,4 +1,3 @@
-// App.tsx (replace)
 import Footer from './components/Footer';
 import React, { useState, useMemo, useEffect } from 'react';
 import CitizenPortal from './components/CitizenPortal';
@@ -25,7 +24,7 @@ const App: React.FC = () => {
       const token = localStorage.getItem("admin_token");
       if (!token) return setIsAdmin(false);
       try {
-        const res = await fetch(`${API_BASE}/users/verify`, {
+        const res = await fetch(`${API_BASE}/users/admin/verify`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) setIsAdmin(true);

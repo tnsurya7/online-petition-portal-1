@@ -21,7 +21,10 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 const res = await fetch(`${API_BASE}/users/admin/login`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ username: o.username, password: o.password })
+  body: JSON.stringify({
+    username: loginData.username,
+    password: loginData.password
+  })
 });
 
       const data = await res.json();
