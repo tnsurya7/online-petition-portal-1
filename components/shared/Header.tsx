@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useI18n } from '../../context/I18nContext';
 import { LogOut } from 'lucide-react';
@@ -22,7 +21,6 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, view, setView, onLogout }) => 
           : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md'
       }`}
     >
-      {/* FIX: Cast tab to a specific union of keys for type safety with the t function. */}
       {t(tab as 'home' | 'submit' | 'track' | 'admin')}
     </button>
   );
@@ -35,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, view, setView, onLogout }) => 
             <h1 className="text-xl md:text-2xl font-bold text-indigo-700">{t('title')}</h1>
             <p className="text-xs md:text-sm text-gray-500">{t('tagline')}</p>
           </div>
+
           <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={() => setLang(lang === 'en' ? 'ta' : 'en')}
@@ -42,6 +41,7 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, view, setView, onLogout }) => 
             >
               {lang === 'en' ? 'தமிழ்' : 'English'}
             </button>
+
             {isAdmin && (
               <button
                 onClick={onLogout}
@@ -53,10 +53,11 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, view, setView, onLogout }) => 
             )}
           </div>
         </div>
+
         {!isAdmin && setView && (
           <nav className="mt-4 border-t pt-1">
             <div className="flex items-center justify-start -mb-px">
-              {['home', 'submit', 'track', 'admin'].map(tab => (
+              {['home', 'submit', 'track', 'admin'].map((tab) => (
                 <NavButton key={tab} tab={tab} />
               ))}
             </div>

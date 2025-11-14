@@ -1,200 +1,183 @@
-import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
-import { useI18n } from '../../context/I18nContext';
-import { usePetitions } from '../../context/PetitionContext';
-import { PetitionCategory } from '../../types';
-import SuccessModal from '../shared/SuccessModal';
-import { translations } from '../../constants/translations';
+import React, { useState } from "react";
+import { Upload } from "lucide-react";
+import { useI18n } from "../../context/I18nContext";
+import SuccessModal from "../shared/SuccessModal";
+import { PetitionCategory } from "../../types";
+import { translations } from "../../constants/translations";
 
 const SubmitPetitionForm: React.FC = () => {
   const { t, t_categories } = useI18n();
-  const { addPetition } = usePetitions();
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    category: 'road' as PetitionCategory,
-    description: '',
-    file: undefined as File | undefined
-  });
   const [showSuccess, setShowSuccess] = useState(false);
-  const [lastPetitionId, setLastPetitionId] = useState('');
+  const [createdCode, setCreatedCode] = useState("");
 
-  const handleInputChange = (
+  const [formData, setFormData] = useState({
+    title: "",
+    category: "road" as PetitionCategory,
+    description: "",
+    file: undefined as File | undefined,
+  });
+
+  const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
+
+  const handleInput = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData(prev => ({ ...prev, file: e.target.files![0] }));
-    }
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    setFormData({ ...formData, file: e.target.files[0] });
   };
 
-  // ✅ Updated handleSubmit: sends FormData (supports file upload)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const token = localStorage.getItem("user_token");
+    if (!token) {
+      alert("⚠ Please login to submit petition.");
+      return;
+    }
+
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('phone', formData.phone);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('status', 'Pending');
+      const fd = new FormData();
+      fd.append("title", formData.title);
+      fd.append("category", formData.category);
+      fd.append("description", formData.description);
+      if (formData.file) fd.append("file", formData.file);
 
-      if (formData.file) {
-        formDataToSend.append('file', formData.file);
-      }
-
-      const response = await fetch('https://petition-backend-ow0l.onrender.com/api/petitions', {
-        method: 'POST',
-        body: formDataToSend
+      const res = await fetch(`${API_BASE}/petitions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       });
 
-      const result = await response.json();
+      const json = await res.json();
 
-      if (response.ok) {
-        // Optional: Add locally for instant UI update
-        addPetition(result);
-        setLastPetitionId(result.petition_id || '');
-        setShowSuccess(true);
+      if (!res.ok) return alert("❌ " + (json.error || "Error submitting petition"));
 
-        // Reset form
-        setFormData({
-          name: '',
-          phone: '',
-          email: '',
-          category: 'road' as PetitionCategory,
-          description: '',
-          file: undefined
-        });
-      } else {
-        alert('❌ Error: ' + result.error);
-      }
-    } catch (error) {
-      console.error('Error submitting petition:', error);
-      alert('❌ Failed to submit petition. Please check your backend or network.');
+      setCreatedCode(json.petition.petition_code);
+      setShowSuccess(true);
+
+      setFormData({
+        title: "",
+        category: "road",
+        description: "",
+        file: undefined,
+      });
+    } catch {
+      alert("❌ Network error. Please try again.");
     }
   };
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('submit')}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
-              <input
-                type="text"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}</label>
-              <input
-                type="tel"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-          </div>
+      {/* MAIN CARD */}
+      <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 max-w-2xl mx-auto border border-blue-200">
 
+        {/* TITLE SECTION */}
+        <div className="border-b pb-3 mb-6">
+          <h2 className="text-3xl font-bold text-blue-700">{t("submit")}</h2>
+          <p className="text-gray-600 text-sm mt-1">
+            Submit your grievance securely to the Government of Tamil Nadu.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5" encType="multipart/form-data">
+          {/* TITLE FIELD */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Petition Title
+            </label>
             <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              name="title"
+              required
+              value={formData.title}
+              onChange={handleInput}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* CATEGORY FIELD */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("category")}
+            </label>
             <select
               name="category"
               value={formData.category}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              onChange={handleInput}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
             >
-              {(Object.keys(translations.en.categories) as PetitionCategory[]).map(key => (
-                <option key={key} value={key}>
-                  {t_categories(key as PetitionCategory)}
+              {(Object.keys(translations.en.categories) as PetitionCategory[]).map((cat) => (
+                <option key={cat} value={cat}>
+                  {t_categories(cat)}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* DESCRIPTION */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("description")}
+            </label>
             <textarea
               name="description"
-              required
               rows={5}
+              required
               value={formData.description}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              onChange={handleInput}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* File Upload */}
+          {/* FILE UPLOAD */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('upload')}</label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-              <div className="space-y-1 text-center">
-                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
-                  <label
-                    htmlFor="file-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none"
-                  >
-                    <span>Upload a file</span>
-                    <input
-                      id="file-upload"
-                      name="file"
-                      type="file"
-                      className="sr-only"
-                      accept="image/*,.pdf"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  <p className="pl-1">or drag and drop</p>
-                </div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("upload")}
+            </label>
+
+            <div className="border-2 border-blue-300 border-dashed rounded-xl p-6 text-center bg-blue-50/30">
+              <div className="flex flex-col items-center gap-2">
+                <Upload className="h-10 w-10 text-blue-500" />
+
+                <label className="text-blue-700 hover:text-blue-900 cursor-pointer font-semibold">
+                  Browse file
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={handleFile}
+                  />
+                </label>
+
                 {formData.file ? (
                   <p className="text-sm text-green-600">{formData.file.name}</p>
                 ) : (
-                  <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG, PDF — Max size 10MB
+                  </p>
                 )}
               </div>
             </div>
           </div>
 
+          {/* SUBMIT BUTTON */}
           <button
             type="submit"
-            className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold text-lg transition-all shadow-md hover:shadow-lg"
+            className="w-full py-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 shadow-md transition"
           >
-            {t('submitBtn')}
+            {t("submitBtn")}
           </button>
         </form>
       </div>
 
+      {/* SUCCESS MODAL */}
       <SuccessModal
         isOpen={showSuccess}
         onClose={() => setShowSuccess(false)}
-        petitionId={lastPetitionId}
+        petitionId={createdCode}
       />
     </>
   );

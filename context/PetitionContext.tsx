@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { Petition } from '../types';
 
-// 🧩 Define context type
+// Context Type
 interface PetitionContextType {
   petitions: Petition[];
   setPetitions: React.Dispatch<React.SetStateAction<Petition[]>>;
@@ -20,25 +20,26 @@ interface PetitionContextType {
     newRemarks: string
   ) => void;
   getPetitionByIdOrPhone: (idOrPhone: string) => Petition | undefined;
-  refreshPetitionsFromDB: () => Promise<void>; // ✅ For dashboard auto-refresh
+  refreshPetitionsFromDB: () => Promise<void>;
 }
 
-// 🧩 Create Context
-const PetitionContext = createContext<PetitionContextType | undefined>(undefined);
+// Context
+const PetitionContext = createContext<PetitionContextType | undefined>(
+  undefined
+);
 
-// 🧩 Provider Component
+// Provider
 export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [petitions, setPetitions] = useState<Petition[]>([]);
 
-  /**
-   * ✅ Add a new petition (used in Citizen Portal form)
-   */
+  // Add petition
   const addPetition = (
     petitionData: Omit<Petition, 'id' | 'status' | 'date' | 'remarks'>
   ) => {
     const newId = `PET${Date.now().toString().slice(-6)}`;
+
     const newPetition: Petition = {
       id: newId,
       ...petitionData,
@@ -46,13 +47,12 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
       date: new Date().toLocaleDateString(),
       remarks: '',
     };
+
     setPetitions((prev) => [...prev, newPetition]);
     return newId;
   };
 
-  /**
-   * ✅ Update petition locally (instant frontend change)
-   */
+  // Update petition
   const updatePetition = (
     id: string,
     newStatus: Petition['status'],
@@ -65,15 +65,14 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
     );
   };
 
-  /**
-   * ✅ Refresh petitions from database (for admin dashboard)
-   */
+  // Refresh petitions from DB
   const refreshPetitionsFromDB = useCallback(async () => {
     try {
-      const res = await fetch('https://petition-backend-ow0l.onrender.com/api/petitions');
+      const res = await fetch(
+        'https://petition-backend-ow0l.onrender.com/api/petitions'
+      );
       const data = await res.json();
 
-      // 🔄 Normalize backend structure
       const normalized = data.map((p: any) => ({
         id: p.id || p.petition_id,
         name: p.name || p.full_name || '',
@@ -87,43 +86,36 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
       }));
 
       setPetitions(normalized);
-      console.log('✅ Loaded petitions IDs:', normalized.map((p: any) => p.id));
+      console.log('Loaded petitions:', normalized.map((p: any) => p.id));
     } catch (error) {
-      console.error('❌ Failed to refresh petitions:', error);
+      console.error('Failed to refresh petitions:', error);
     }
   }, []);
 
-  /**
-   * ✅ Get petition by ID or phone (for citizen tracking)
-   * Supports formats like "PET123456", "123456", or numeric IDs
-   */
+  // Search petition by ID OR phone
   const getPetitionByIdOrPhone = (input: string): Petition | undefined => {
     if (!input) return undefined;
 
     const clean = input.trim().toUpperCase();
 
-    // 🔹 Step 1: Match by phone number (exact)
+    // Match by phone
     const byPhone = petitions.find((p) => p.phone === clean);
     if (byPhone) return byPhone;
 
-    // 🔹 Step 2: Match by petition ID (with flexible pattern)
+    // Match by ID
     const byId = petitions.find((p) => {
       const storedId = String(p.id || '').toUpperCase();
 
-      // Direct match (handles PET123 or numeric)
       if (storedId === clean) return true;
 
-      // Remove PET prefix from both sides and compare numeric parts
       const strip = (s: string) => s.replace(/^PET/i, '').replace(/^0+/, '');
+
       if (strip(storedId) === strip(clean)) return true;
 
-      // Match numeric form if applicable
       const numericStored = Number(strip(storedId));
       const numericInput = Number(strip(clean));
-      if (!Number.isNaN(numericStored) && numericStored === numericInput)
-        return true;
 
-      return false;
+      return !isNaN(numericStored) && numericStored === numericInput;
     });
 
     return byId;
@@ -137,7 +129,7 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
         addPetition,
         updatePetition,
         getPetitionByIdOrPhone,
-        refreshPetitionsFromDB, // ✅ exposed for dashboard
+        refreshPetitionsFromDB,
       }}
     >
       {children}
@@ -145,9 +137,7 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-/**
- * ✅ Custom hook to use petitions safely
- */
+// Hook
 export const usePetitions = () => {
   const context = useContext(PetitionContext);
   if (!context)

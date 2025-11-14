@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -9,7 +8,9 @@ if (!API_KEY) {
 
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-// Fallback rule-based responses
+// ---------------------------
+// Fallback Rule-Based Responses
+// ---------------------------
 const mockAIResponses = {
   en: {
     road: "Respected Sir/Madam, I humbly request your attention to repair the damaged road in our area. The poor condition of the road is causing great inconvenience to residents and poses safety risks.",
@@ -29,51 +30,64 @@ const mockAIResponses = {
   }
 };
 
-const detectLanguage = (text: string): 'ta' | 'en' => {
+// ---------------------------
+// Language Detection
+// ---------------------------
+const detectLanguage = (text: string): "ta" | "en" => {
   const tamilPattern = /[\u0B80-\u0BFF]/;
-  return tamilPattern.test(text) ? 'ta' : 'en';
+  return tamilPattern.test(text) ? "ta" : "en";
 };
 
+// ---------------------------
+// Fallback Petition Generator
+// ---------------------------
 const getFallbackResponse = (userMessage: string) => {
-    const detectedLang = detectLanguage(userMessage);
-    const message = userMessage.toLowerCase();
-    
-    const responses = mockAIResponses[detectedLang];
-    
-    if (message.includes('road') || message.includes('சாலை')) return responses.road;
-    if (message.includes('water') || message.includes('தண்ணீர்') || message.includes('நீர்')) return responses.water;
-    if (message.includes('electricity') || message.includes('மின்') || message.includes('power')) return responses.electricity;
-    if (message.includes('health') || message.includes('சுகாதார')) return responses.health;
-    if (message.includes('education') || message.includes('கல்வி')) return responses.education;
-    
-    return responses.default;
+  const detectedLang = detectLanguage(userMessage);
+  const message = userMessage.toLowerCase();
+  const responses = mockAIResponses[detectedLang];
+
+  if (message.includes("road") || message.includes("சாலை")) return responses.road;
+  if (message.includes("water") || message.includes("தண்ணீர்") || message.includes("நீர்"))
+    return responses.water;
+  if (message.includes("electricity") || message.includes("மின்") || message.includes("power"))
+    return responses.electricity;
+  if (message.includes("health") || message.includes("சுகாதார"))
+    return responses.health;
+  if (message.includes("education") || message.includes("கல்வி"))
+    return responses.education;
+
+  return responses.default;
 };
 
+// ---------------------------
+// Gemini Petition Generator
+// ---------------------------
 export const generatePetitionText = async (userInput: string): Promise<string> => {
   if (!API_KEY) {
     return getFallbackResponse(userInput);
   }
 
   const detectedLang = detectLanguage(userInput);
-  const languageName = detectedLang === 'ta' ? 'Tamil' : 'English';
-  
+  const languageName = detectedLang === "ta" ? "Tamil" : "English";
+
   const prompt = `
-    You are an assistant named Surya, helping a citizen write a formal petition to a government official (like a District Collector or MLA) in India.
-    The user's input is: "${userInput}"
-    
-    Your tasks:
-    1.  Detect the language of the user's input. The user is writing in ${languageName}.
-    2.  Convert the user's informal message into a single, formal, polite paragraph suitable for a petition.
-    3.  The response MUST be in the same language as the input (${languageName}).
-    4.  Begin the paragraph with a respectful salutation (e.g., "Respected Sir/Madam," or "மாண்புமிகு ஆட்சியர் அவர்களுக்கு,").
-    5.  Do not add any extra text, explanations, or formatting. Just provide the single paragraph.
+You are an assistant named Surya, helping a citizen write a formal petition to a government official (District Collector or MLA).
+The user's input is: "${userInput}"
+
+Your tasks:
+1. Detect the user's language (it is ${languageName}).
+2. Convert the message into a single, formal petition paragraph.
+3. Respond ONLY in ${languageName}.
+4. Start with a respectful greeting (e.g., "Respected Sir/Madam," or "மாண்புமிகு ஆட்சியர் அவர்களுக்கு,").
+5. Do NOT add anything else — just one clean paragraph.
   `;
 
   try {
     const response = await ai!.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
+      model: "gemini-2.5-flash",
+      contents: prompt
     });
+
     return response.text.trim();
   } catch (error) {
     console.error("Gemini API error:", error);

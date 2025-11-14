@@ -1,6 +1,6 @@
 // components/UserLogin.tsx
 import React, { useState } from "react";
-import { API_BASE } from "../App"; // adjust if your path differs
+import { API_BASE } from "../App";
 
 interface Props {
   onUserLogin: (token: string) => void;
@@ -17,14 +17,17 @@ const UserLogin: React.FC<Props> = ({ onUserLogin, onSwitchToRegister }) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     try {
       const res = await fetch(`${API_BASE}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
+
       localStorage.setItem("user_token", data.token);
       onUserLogin(data.token);
     } catch (err: any) {
@@ -37,23 +40,46 @@ const UserLogin: React.FC<Props> = ({ onUserLogin, onSwitchToRegister }) => {
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 mt-8">
       <h2 className="text-2xl font-bold mb-4">User Login</h2>
-      {error && (
-        <p className="text-sm text-red-600 mb-2">{error}</p>
-      )}
+
+      {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-2 border rounded-md" />
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 border rounded-md"
+          />
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Password</label>
-          <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-2 border rounded-md" />
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2 border rounded-md"
+          />
         </div>
+
         <div className="flex items-center justify-between">
-          <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md" disabled={loading}>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md"
+            disabled={loading}
+          >
             {loading ? "Signing in..." : "Sign in"}
           </button>
-          <button type="button" className="text-sm text-gray-500" onClick={() => onSwitchToRegister && onSwitchToRegister()}>
+
+          <button
+            type="button"
+            className="text-sm text-gray-500"
+            onClick={() => onSwitchToRegister && onSwitchToRegister()}
+          >
             Register
           </button>
         </div>
