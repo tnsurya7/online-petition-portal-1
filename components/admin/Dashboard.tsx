@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchPetitions = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/petitions');
+        const res = await fetch('https://petition-backend-ow0l.onrender.com/api/petitions');
         const data = await res.json();
 
         // ✅ Normalize backend response

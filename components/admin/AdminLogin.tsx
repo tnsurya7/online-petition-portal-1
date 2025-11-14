@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useI18n } from '../../context/I18nContext';
 import { LogIn } from 'lucide-react';
+import { API_BASE } from '../../App';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -12,12 +12,32 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginData.username === 'admin' && loginData.password === 'admin123') {
+    setError('');
+
+    try {
+      // Example inside your admin login handler
+const res = await fetch(`${API_BASE}/users/admin/login`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username: o.username, password: o.password })
+});
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Invalid credentials");
+        return;
+      }
+
+      // Save JWT token
+      localStorage.setItem("adminToken", data.token);
+
       onLoginSuccess();
-    } else {
-      setError('Invalid credentials');
+    } catch (err) {
+      console.error(err);
+      setError("Server error. Please try again.");
     }
   };
 
