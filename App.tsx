@@ -1,16 +1,15 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Footer from "./components/Footer";
 import CitizenPortal from "./components/CitizenPortal";
 import AdminPortal from "./components/AdminPortal";
 import UserLogin from "./components/UserLogin";
 import UserRegister from "./components/UserRegister";
-import { I18nProvider, Language } from "./context/I18nContext";
+import { I18nProvider } from "./context/I18nContext";
 import { PetitionProvider } from "./context/PetitionContext";
 
 export const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>("en");
   const [isAdmin, setIsAdmin] = useState(false);
   const [isUser, setIsUser] = useState(false);
   const [view, setView] = useState("home");
@@ -18,12 +17,8 @@ const App: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
 
-  // NEW: Prevent flicker — wait for auth check
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // -----------------------------
-  // Auto-check authentication
-  // -----------------------------
   useEffect(() => {
     const checkAdmin = async () => {
       const token = localStorage.getItem("admin_token");
@@ -56,7 +51,6 @@ const App: React.FC = () => {
     );
   }, []);
 
-  // Show loading... prevents flicker
   if (checkingAuth) {
     return (
       <div className="w-full h-screen flex items-center justify-center text-lg">
@@ -65,10 +59,8 @@ const App: React.FC = () => {
     );
   }
 
-  const i18nValue = useMemo(() => ({ lang, setLang }), [lang]);
-
   return (
-    <I18nProvider value={i18nValue}>
+    <I18nProvider>
       <PetitionProvider>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-100 font-sans flex flex-col">
           <div className="flex-grow">
@@ -88,7 +80,6 @@ const App: React.FC = () => {
               />
             ) : (
               <>
-                {/* LOGIN & REGISTER BUTTONS */}
                 <div className="max-w-7xl mx-auto px-4 py-6 flex justify-end gap-4">
                   <button
                     className="px-3 py-2 bg-indigo-600 text-white rounded"
@@ -111,7 +102,6 @@ const App: React.FC = () => {
                   </button>
                 </div>
 
-                {/* LOGIN / REGISTER SCREENS */}
                 {showLogin ? (
                   <UserLogin
                     onUserLogin={(token) => {
@@ -134,7 +124,6 @@ const App: React.FC = () => {
                     onCancel={() => setShowRegister(false)}
                   />
                 ) : (
-                  // NEVER show CitizenPortal before login
                   <div className="text-center text-gray-500 mt-10">
                     Please login or register to continue.
                   </div>
