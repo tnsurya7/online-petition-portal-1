@@ -18,49 +18,52 @@ const App: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
 
+  // NEW: Prevent flicker — wait for auth check
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   // -----------------------------
   // Auto-check authentication
   // -----------------------------
   useEffect(() => {
     const checkAdmin = async () => {
       const token = localStorage.getItem("admin_token");
-      if (!token) return setIsAdmin(false);
+      if (!token) return;
 
       try {
         const res = await fetch(`${API_BASE}/users/admin/verify`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) setIsAdmin(true);
-        else {
-          localStorage.removeItem("admin_token");
-          setIsAdmin(false);
-        }
-      } catch {
-        setIsAdmin(false);
-      }
+        else localStorage.removeItem("admin_token");
+      } catch {}
     };
 
     const checkUser = async () => {
       const token = localStorage.getItem("user_token");
-      if (!token) return setIsUser(false);
+      if (!token) return;
 
       try {
         const res = await fetch(`${API_BASE}/users/verify`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) setIsUser(true);
-        else {
-          localStorage.removeItem("user_token");
-          setIsUser(false);
-        }
-      } catch {
-        setIsUser(false);
-      }
+        else localStorage.removeItem("user_token");
+      } catch {}
     };
 
-    checkAdmin();
-    checkUser();
+    Promise.all([checkAdmin(), checkUser()]).finally(() =>
+      setCheckingAuth(false)
+    );
   }, []);
+
+  // Show loading... prevents flicker
+  if (checkingAuth) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center text-lg">
+        Loading...
+      </div>
+    );
+  }
 
   const i18nValue = useMemo(() => ({ lang, setLang }), [lang]);
 
@@ -85,9 +88,7 @@ const App: React.FC = () => {
               />
             ) : (
               <>
-                {/* -----------------------------
-                    LOGIN / REGISTER BUTTONS
-                ------------------------------ */}
+                {/* LOGIN & REGISTER BUTTONS */}
                 <div className="max-w-7xl mx-auto px-4 py-6 flex justify-end gap-4">
                   <button
                     className="px-3 py-2 bg-indigo-600 text-white rounded"
@@ -110,9 +111,7 @@ const App: React.FC = () => {
                   </button>
                 </div>
 
-                {/* -----------------------------
-                    AUTH MODALS
-                ------------------------------ */}
+                {/* LOGIN / REGISTER SCREENS */}
                 {showLogin ? (
                   <UserLogin
                     onUserLogin={(token) => {
@@ -135,11 +134,10 @@ const App: React.FC = () => {
                     onCancel={() => setShowRegister(false)}
                   />
                 ) : (
-                  <CitizenPortal
-                    view={view}
-                    setView={setView}
-                    onAdminLogin={() => setIsAdmin(true)}
-                  />
+                  // NEVER show CitizenPortal before login
+                  <div className="text-center text-gray-500 mt-10">
+                    Please login or register to continue.
+                  </div>
                 )}
               </>
             )}
