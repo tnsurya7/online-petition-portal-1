@@ -44,4 +44,5 @@ export const adminAuth = (req, res, next) => {
   next();
 };
 
-export const verifyAdminToken = adminAuth; // 👈 REQUIRED EXPORT
+// 👇 THIS EXPORT MUST EXIST OR RENDER WILL FAIL
+export const verifyAdminToken = adminAuth;
