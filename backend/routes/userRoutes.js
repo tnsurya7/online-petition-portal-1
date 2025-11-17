@@ -7,7 +7,10 @@ import {
   verifyToken
 } from "../controllers/userController.js";
 
-import { requireAuth, adminAuth } from "../middleware/auth.js";
+import {
+  verifyUserToken,
+  verifyAdminToken
+} from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -23,11 +26,11 @@ router.post("/login", loginUser);
 router.post("/admin/login", loginAdmin);
 
 // verify admin token
-router.get("/admin/verify", adminAuth, verifyToken);
+router.get("/admin/verify", verifyAdminToken, verifyToken);
 
 /* -----------------------------------
    USER TOKEN VERIFY
 ----------------------------------- */
-router.get("/verify", requireAuth, verifyToken);
+router.get("/verify", verifyUserToken, verifyToken);
 
 export default router;
