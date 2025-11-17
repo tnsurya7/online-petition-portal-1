@@ -199,7 +199,8 @@ const SubmitPetitionForm: React.FC = () => {
                   <p className="text-sm text-green-600">{formData.file.name}</p>
                 ) : (
                   <p className="text-xs text-gray-500">PNG, JPG, PDF — Max size 10MB</p>
-                )}\div>
+                )}
+              </div>
             </div>
           </div>
 
