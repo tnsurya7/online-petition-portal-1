@@ -7,7 +7,7 @@ dotenv.config();
 console.log("🔗 Connecting to MySQL Host:", process.env.DB_HOST);
 
 const sslConfig = {
-  ca: fs.readFileSync("./ca.pem")
+  ca: process.env.SSL_CERT
 };
 
 const pool = mysql.createPool({

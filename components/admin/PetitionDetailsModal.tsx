@@ -31,11 +31,22 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
     setSaving(true);
 
     try {
+      const token = localStorage.getItem("admin_token");
+
+      if (!token) {
+        alert("Admin login required.");
+        setSaving(false);
+        return;
+      }
+
       const res = await fetch(
         `${API_BASE}/petitions/${petition.petition_code}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,   // ✅ FIXED HERE
+          },
           body: JSON.stringify({
             status: editStatus,
             remarks: editRemarks,
@@ -54,7 +65,7 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
       await refreshPetitionsFromDB();
 
       setToast("Petition updated successfully!");
-      setTimeout(onClose, 1200); // Auto close
+      setTimeout(onClose, 1200);
     } catch (err) {
       console.error(err);
       alert("❌ Failed to update petition.");
@@ -65,17 +76,15 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
 
   return (
     <>
-      {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in">
           {toast}
         </div>
       )}
 
-      {/* Modal */}
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg border-t-4 border-indigo-600">
-          {/* Header */}
+
           <div className="flex justify-between items-start mb-6">
             <h3 className="text-2xl font-bold text-indigo-700 flex items-center gap-2">
               <CheckCircle size={22} />
@@ -86,100 +95,87 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
             </button>
           </div>
 
-          {/* Info */}
           <div className="space-y-4 mb-6">
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-    {/* Petition ID */}
-    <div>
-      <p className="text-sm text-gray-600">Petition ID</p>
-      <p className="font-semibold">{petition.petition_code}</p>
-    </div>
+              <div>
+                <p className="text-sm text-gray-600">Petition ID</p>
+                <p className="font-semibold">{petition.petition_code}</p>
+              </div>
 
-    {/* Name */}
-    <div>
-      <p className="text-sm text-gray-600">Name</p>
-      <p className="font-semibold">{petition.name}</p>
-    </div>
+              <div>
+                <p className="text-sm text-gray-600">Name</p>
+                <p className="font-semibold">{petition.name}</p>
+              </div>
 
-    {/* Phone */}
-    <div>
-      <p className="text-sm text-gray-600">Phone</p>
-      <p className="font-semibold">{petition.phone}</p>
-    </div>
+              <div>
+                <p className="text-sm text-gray-600">Phone</p>
+                <p className="font-semibold">{petition.phone}</p>
+              </div>
 
-    {/* Address */}
-    <div className="sm:col-span-2">
-      <p className="text-sm text-gray-600">Address</p>
-      <p className="font-semibold">{petition.address}</p>
-    </div>
+              <div className="sm:col-span-2">
+                <p className="text-sm text-gray-600">Address</p>
+                <p className="font-semibold">{petition.address}</p>
+              </div>
 
-    {/* Pincode */}
-    <div>
-      <p className="text-sm text-gray-600">Pincode</p>
-      <p className="font-semibold">{petition.pincode}</p>
-    </div>
+              <div>
+                <p className="text-sm text-gray-600">Pincode</p>
+                <p className="font-semibold">{petition.pincode}</p>
+              </div>
 
-    {/* Category */}
-    <div>
-      <p className="text-sm text-gray-600">Category</p>
-      <p className="font-semibold">{t_categories(petition.category)}</p>
-    </div>
+              <div>
+                <p className="text-sm text-gray-600">Category</p>
+                <p className="font-semibold">{t_categories(petition.category)}</p>
+              </div>
 
-    {/* Email */}
-    <div>
-      <p className="text-sm text-gray-600">Email</p>
-      <p className="font-semibold">{petition.email || "N/A"}</p>
-    </div>
+              <div>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-semibold">{petition.email || "N/A"}</p>
+              </div>
 
-    {/* Date */}
-    <div>
-      <p className="text-sm text-gray-600">Date</p>
-      <p className="font-semibold">{petition.date}</p>
-    </div>
-  </div>
+              <div>
+                <p className="text-sm text-gray-600">Date</p>
+                <p className="font-semibold">{petition.date}</p>
+              </div>
+            </div>
 
-  {/* Description */}
-  <div>
-    <p className="text-sm text-gray-600 mb-1">Description</p>
-    <p className="p-4 bg-gray-50 rounded-lg border">
-      {petition.description}
-    </p>
-  </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Description</p>
+              <p className="p-4 bg-gray-50 rounded-lg border">
+                {petition.description}
+              </p>
+            </div>
 
-  {/* Status */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Update Status
-    </label>
-    <select
-      value={editStatus}
-      onChange={(e) => setEditStatus(e.target.value as PetitionStatus)}
-      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-    >
-      {(Object.keys(translations.en.status) as PetitionStatus[]).map((s) => (
-        <option key={s} value={s}>
-          {t_status(s)}
-        </option>
-      ))}
-    </select>
-  </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Update Status
+              </label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value as PetitionStatus)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              >
+                {(Object.keys(translations.en.status) as PetitionStatus[]).map((s) => (
+                  <option key={s} value={s}>
+                    {t_status(s)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-  {/* Remarks */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      Remarks
-    </label>
-    <textarea
-      value={editRemarks}
-      onChange={(e) => setEditRemarks(e.target.value)}
-      rows={3}
-      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-    />
-  </div>
-</div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Remarks
+              </label>
+              <textarea
+                value={editRemarks}
+                onChange={(e) => setEditRemarks(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-4">
             <button
               onClick={onClose}
