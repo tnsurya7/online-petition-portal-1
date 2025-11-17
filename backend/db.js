@@ -12,7 +12,6 @@ const pool = mysql.createPool({
   port: Number(process.env.DB_PORT),
   database: process.env.DB_NAME,
 
-  // ✅ Aiven SSL certificate loaded from environment variable
   ssl: {
     ca: process.env.SSL_CERT
   },
