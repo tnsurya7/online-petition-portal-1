@@ -7,16 +7,17 @@ import React, {
 } from "react";
 import { Petition, PetitionStatus } from "../types";
 
+const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
+
 interface PetitionContextType {
   petitions: Petition[];
-  setPetitions: React.Dispatch<React.SetStateAction<Petition[]>>;
+  refreshPetitionsFromDB: () => Promise<void>;
   updatePetition: (
-    petitionCode: string,
+    code: string,
     newStatus: PetitionStatus,
     newRemarks: string
   ) => void;
-  getPetitionByIdOrPhone: (idOrPhone: string) => Petition | undefined;
-  refreshPetitionsFromDB: () => Promise<void>;
+  deletePetitionLocal: (code: string) => void;
 }
 
 const PetitionContext = createContext<PetitionContextType | undefined>(
@@ -28,74 +29,60 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [petitions, setPetitions] = useState<Petition[]>([]);
 
-  /* 🔵 Update petition in state instantly */
+  const refreshPetitionsFromDB = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/petitions`);
+      const data = await res.json();
+
+      const normalized: Petition[] = data.map((p: any) => ({
+        id: p.id ?? p.petition_code,
+        petition_code: p.petition_code,
+        name: p.name,
+        address: p.address,
+        phone: p.phone,
+        pincode: p.pincode,
+        email: p.email,
+        title: p.title,
+        category: p.category,
+        description: p.description,
+        attachment: p.attachment ?? null,
+        status: p.status,
+        remarks: p.remarks ?? "",
+        date: p.date || p.created_at || "",
+      }));
+
+      setPetitions(normalized);
+      console.log("Loaded petitions:", normalized.map((p) => p.petition_code));
+    } catch (error) {
+      console.error("❌ Failed to refresh petitions:", error);
+    }
+  }, []);
+
   const updatePetition = (
-    petitionCode: string,
+    code: string,
     newStatus: PetitionStatus,
     newRemarks: string
   ) => {
     setPetitions((prev) =>
       prev.map((p) =>
-        p.petition_code === petitionCode
+        p.petition_code === code
           ? { ...p, status: newStatus, remarks: newRemarks }
           : p
       )
     );
   };
 
-  /* 🔵 Load petitions from backend */
-  const refreshPetitionsFromDB = useCallback(async () => {
-    try {
-      const res = await fetch(
-        "https://petition-backend-ow0l.onrender.com/api/petitions"
-      );
-
-      const data = await res.json();
-
-      const normalized = data.map((p: any) => ({
-        petition_code: p.petition_code,
-        id: p.id,
-        name: p.name || "",
-        phone: p.phone || "",
-        email: p.email || "",
-        title: p.title || "",
-        category: p.category || "",
-        description: p.description || "",
-        status: (p.status || "pending").toLowerCase(),
-        remarks: p.remarks || "",
-        date: p.created_at || "",
-      }));
-
-      setPetitions(normalized);
-      console.log("Loaded petitions:", normalized.map((p) => p.petition_code));
-    } catch (error) {
-      console.error("Failed to refresh petitions:", error);
-    }
-  }, []);
-
-  /* 🔍 Search by ID or Phone */
-  const getPetitionByIdOrPhone = (input: string): Petition | undefined => {
-    if (!input) return undefined;
-
-    const clean = input.trim().toUpperCase();
-
-    const byPhone = petitions.find((p) => p.phone === clean);
-    if (byPhone) return byPhone;
-
-    const byId = petitions.find((p) => p.petition_code === clean);
-    if (byId) return byId;
-
-    return undefined;
+  const deletePetitionLocal = (code: string) => {
+    setPetitions((prev) => prev.filter((p) => p.petition_code !== code));
   };
 
   return (
     <PetitionContext.Provider
       value={{
         petitions,
-        setPetitions,
-        updatePetition,
-        getPetitionByIdOrPhone,
         refreshPetitionsFromDB,
+        updatePetition,
+        deletePetitionLocal,
       }}
     >
       {children}
@@ -104,8 +91,8 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
 };
 
 export const usePetitions = () => {
-  const context = useContext(PetitionContext);
-  if (!context)
+  const ctx = useContext(PetitionContext);
+  if (!ctx)
     throw new Error("usePetitions must be used within a PetitionProvider");
-  return context;
+  return ctx;
 };

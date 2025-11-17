@@ -53,7 +53,7 @@ const App: React.FC = () => {
 
   if (checkingAuth) {
     return (
-      <div className="w-full h-screen flex items-center justify-center text-lg">
+      <div className="w-full h-screen flex items-center justify-center text-xl font-semibold">
         Loading...
       </div>
     );
@@ -62,7 +62,39 @@ const App: React.FC = () => {
   return (
     <I18nProvider>
       <PetitionProvider>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-100 font-sans flex flex-col">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-indigo-100 flex flex-col">
+          
+          {/* 🔵 PREMIUM HEADER */}
+          <header className="bg-white shadow-md py-4 sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+              <h1 className="text-2xl font-extrabold text-indigo-700 tracking-wide">
+                Online Petition Portal
+              </h1>
+              {!isAdmin && !isUser && (
+                <div className="flex gap-3">
+                  <button
+                    className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition"
+                    onClick={() => {
+                      setShowLogin(true);
+                      setShowRegister(false);
+                    }}
+                  >
+                    User Login
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-lg border border-indigo-600 text-indigo-600 hover:bg-indigo-50 transition"
+                    onClick={() => {
+                      setShowRegister(true);
+                      setShowLogin(false);
+                    }}
+                  >
+                    Register
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+
           <div className="flex-grow">
             {isAdmin ? (
               <AdminPortal
@@ -80,29 +112,57 @@ const App: React.FC = () => {
               />
             ) : (
               <>
-                <div className="max-w-7xl mx-auto px-4 py-6 flex justify-end gap-4">
-                  <button
-                    className="px-3 py-2 bg-indigo-600 text-white rounded"
-                    onClick={() => {
-                      setShowLogin(true);
-                      setShowRegister(false);
-                    }}
-                  >
-                    User Login
-                  </button>
-
-                  <button
-                    className="px-3 py-2 bg-white border rounded"
-                    onClick={() => {
-                      setShowRegister(true);
-                      setShowLogin(false);
-                    }}
-                  >
-                    Register
-                  </button>
+                {/* 🔥 HERO SECTION */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-20 shadow-lg animate-fadeIn">
+                  <div className="max-w-5xl mx-auto text-center px-6">
+                    <h2 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-lg">
+                      Raise Your Voice,  
+                      <br />  
+                      Strengthen Your Community
+                    </h2>
+                    <p className="text-lg opacity-90 max-w-2xl mx-auto">
+                      Submit petitions, track progress, and bring real improvements
+                      to your city or village.
+                    </p>
+                  </div>
                 </div>
 
-                {showLogin ? (
+                {/* 🎯 CENTERED LOGIN PANEL */}
+                <div className="flex justify-center items-center mt-10">
+                  <div className="bg-white border shadow-xl rounded-2xl p-10 w-full max-w-md animate-slideUp">
+                    <h3 className="text-2xl font-bold text-indigo-700 mb-2 text-center">
+                      Welcome to the Citizen Portal
+                    </h3>
+                    <p className="text-gray-600 text-center mb-6">
+                      Login or Register to submit and track petitions.
+                    </p>
+
+                    <div className="flex flex-col gap-4">
+                      <button
+                        className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                        onClick={() => {
+                          setShowLogin(true);
+                          setShowRegister(false);
+                        }}
+                      >
+                        Login
+                      </button>
+
+                      <button
+                        className="w-full py-3 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition"
+                        onClick={() => {
+                          setShowRegister(true);
+                          setShowLogin(false);
+                        }}
+                      >
+                        Register
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SHOW LOGIN OR REGISTER */}
+                {showLogin && (
                   <UserLogin
                     onUserLogin={(token) => {
                       localStorage.setItem("user_token", token);
@@ -114,7 +174,9 @@ const App: React.FC = () => {
                       setShowRegister(true);
                     }}
                   />
-                ) : showRegister ? (
+                )}
+
+                {showRegister && (
                   <UserRegister
                     onRegistered={(token) => {
                       localStorage.setItem("user_token", token);
@@ -123,10 +185,6 @@ const App: React.FC = () => {
                     }}
                     onCancel={() => setShowRegister(false)}
                   />
-                ) : (
-                  <div className="text-center text-gray-500 mt-10">
-                    Please login or register to continue.
-                  </div>
                 )}
               </>
             )}

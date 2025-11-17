@@ -12,13 +12,14 @@ const pool = mysql.createPool({
   port: Number(process.env.DB_PORT),
   database: process.env.DB_NAME,
 
+  // ✅ SSL loaded from Render secret file
   ssl: {
     ca: process.env.SSL_CERT
   },
 
   waitForConnections: true,
-  connectionLimit: 15,
-  queueLimit: 0
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
 export default pool;

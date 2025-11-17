@@ -26,7 +26,6 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
 
-  /* 🔵 SAVE BUTTON HANDLER */
   const handleSave = async () => {
     if (saving) return;
     setSaving(true);
@@ -35,6 +34,7 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
       const token = localStorage.getItem("admin_token");
       if (!token) {
         alert("Admin login required.");
+        setSaving(false);
         return;
       }
 
@@ -44,7 +44,7 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // 🟢 Correct Admin Auth
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             status: editStatus,
@@ -55,14 +55,7 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
 
       if (!res.ok) throw new Error("Update failed");
 
-      // 🟢 Update state instantly
-      updatePetition(
-        petition.petition_code,
-        editStatus,
-        editRemarks
-      );
-
-      // 🟢 Also refresh DB to sync with backend
+      updatePetition(petition.petition_code, editStatus, editRemarks);
       await refreshPetitionsFromDB();
 
       setToast("Petition updated successfully!");
@@ -80,18 +73,14 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
 
   return (
     <>
-      {/* Success Toast */}
       {toast && (
         <div className="fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in">
           {toast}
         </div>
       )}
 
-      {/* Modal */}
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg border-t-4 border-indigo-600">
-          
-          {/* Header */}
           <div className="flex justify-between items-start mb-6">
             <h3 className="text-2xl font-bold text-indigo-700 flex items-center gap-2">
               <CheckCircle size={22} />
@@ -105,37 +94,34 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
             </button>
           </div>
 
-          {/* Petition Info */}
           <div className="space-y-4 mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
               <Info label="Petition ID" value={petition.petition_code} />
               <Info label="Name" value={petition.name} />
               <Info label="Phone" value={petition.phone} />
               <Info label="Email" value={petition.email || "N/A"} />
-              <Info label="Pincode" value={petition.pincode || "—"} />
+              <Info label="Pincode" value={petition.pincode} />
               <Info
                 label="Category"
                 value={t_categories(petition.category)}
               />
               <Info label="Date" value={petition.date} />
 
-              {/* Address full width */}
               <div className="sm:col-span-2">
                 <p className="text-sm text-gray-600">Address</p>
                 <p className="font-semibold">{petition.address}</p>
               </div>
             </div>
 
-            {/* Description */}
             <div>
+              <p className="text-sm text-gray-600 mb-1">Title</p>
+              <p className="font-semibold mb-2">{petition.title}</p>
               <p className="text-sm text-gray-600 mb-1">Description</p>
               <p className="p-4 bg-gray-50 rounded-lg border">
                 {petition.description}
               </p>
             </div>
 
-            {/* Status Update */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Update Status
@@ -157,7 +143,6 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
               </select>
             </div>
 
-            {/* Remarks */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Remarks
@@ -171,7 +156,6 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-4">
             <button
               onClick={onClose}
@@ -189,7 +173,6 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
               {saving ? "Saving..." : t("save")}
             </button>
           </div>
-
         </div>
       </div>
     </>
@@ -199,7 +182,7 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
 const Info = ({ label, value }: { label: string; value: any }) => (
   <div>
     <p className="text-sm text-gray-600">{label}</p>
-    <p className="font-semibold">{value}</p>
+    <p className="font-semibold break-words">{value}</p>
   </div>
 );
 

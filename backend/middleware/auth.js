@@ -8,18 +8,14 @@ if (!JWT_SECRET) {
   console.warn("⚠️ WARNING: JWT_SECRET is missing. Add it in Render environment!");
 }
 
-/**
- * Extract JWT from Authorization header
- */
+/** Extract JWT from Authorization header */
 const getToken = (req) => {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) return null;
   return header.split(" ")[1];
 };
 
-/**
- * Verify token and return payload
- */
+/** Verify token and return payload */
 const verify = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
@@ -28,9 +24,7 @@ const verify = (token) => {
   }
 };
 
-/**
- * USER AUTH — allows both user & admin
- */
+/** USER AUTH — allows both user & admin */
 export const requireAuth = (req, res, next) => {
   const token = getToken(req);
   if (!token) return res.status(401).json({ error: "Missing token" });
@@ -42,9 +36,7 @@ export const requireAuth = (req, res, next) => {
   next();
 };
 
-/**
- * ADMIN AUTH — only admins allowed
- */
+/** ADMIN AUTH — only admins allowed */
 export const adminAuth = (req, res, next) => {
   const token = getToken(req);
   if (!token) return res.status(401).json({ error: "Missing token" });
@@ -59,3 +51,6 @@ export const adminAuth = (req, res, next) => {
   req.user = payload;
   next();
 };
+
+/** alias for backward compatibility (your routes use verifyAdminToken) */
+export const verifyAdminToken = adminAuth;

@@ -1,35 +1,109 @@
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useI18n } from "../../context/I18nContext";
-import { Petition, PetitionStatus } from "../../types";
-import { FileText, Clock, CheckCircle, XCircle } from "lucide-react";
-import PetitionDetailsModal from "./PetitionDetailsModal";
-import { translations } from "../../constants/translations";
 import { usePetitions } from "../../context/PetitionContext";
+import PetitionDetailsModal from "./PetitionDetailsModal";
+import {
+  Petition,
+  PetitionCategory,
+  PetitionStatus,
+} from "../../types";
+import { translations } from "../../constants/translations";
+import {
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Search,
+  Moon,
+  Sun,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
-const StatCard = ({ title, value, icon, color }: any) => (
-  <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-between hover:scale-105 transition">
-    <div>
-      <p className="text-gray-600 text-sm">{title}</p>
-      <p className={`text-3xl font-bold ${color}`}>{value}</p>
-    </div>
-    <div className={`p-3 rounded-full bg-opacity-10 ${color.replace("text-", "bg-")}`}>
-      {icon}
-    </div>
-  </div>
-);
+const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
 const Dashboard: React.FC = () => {
-  const { t, t_categories, t_status, lang } = useI18n();
-  const { petitions, refreshPetitionsFromDB } = usePetitions();
-  const [selectedPetition, setSelectedPetition] = useState<Petition | null>(null);
-  const [filter, setFilter] = useState<PetitionStatus | "all">("all");
+  const { t, t_categories, t_status } = useI18n();
+  const {
+    petitions,
+    refreshPetitionsFromDB,
+    deletePetitionLocal,
+  } = usePetitions();
 
-  /* Load petitions at start */
+  const [selectedPetition, setSelectedPetition] = useState<Petition | null>(null);
+  const [editPetition, setEditPetition] = useState<Petition | null>(null);
+
+  const [darkMode, setDarkMode] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<PetitionCategory | "all">(
+    "all"
+  );
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+
   useEffect(() => {
     refreshPetitionsFromDB();
   }, [refreshPetitionsFromDB]);
 
-  /* Stats */
+  const parseDate = (value: string | undefined | null) => {
+    if (!value) return null;
+    const onlyDate = value.split(" ")[0];
+    const d = new Date(onlyDate);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+
+    return petitions.filter((p) => {
+      if (s) {
+        const hay = [
+          p.petition_code,
+          p.name,
+          p.title,
+          p.phone,
+          p.email,
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(s)) return false;
+      }
+
+      if (categoryFilter !== "all" && p.category !== categoryFilter) {
+        return false;
+      }
+
+      const created = parseDate(p.date);
+      if (created) {
+        if (dateFrom) {
+          const from = new Date(dateFrom);
+          if (created < from) return false;
+        }
+        if (dateTo) {
+          const to = new Date(dateTo);
+          to.setHours(23, 59, 59, 999);
+          if (created > to) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [petitions, search, categoryFilter, dateFrom, dateTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageItems = filtered.slice(startIndex, startIndex + pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, categoryFilter, dateFrom, dateTo]);
+
   const stats = useMemo(
     () => ({
       total: petitions.length,
@@ -40,107 +114,410 @@ const Dashboard: React.FC = () => {
     [petitions]
   );
 
-  /* Filter */
-  const filteredPetitions =
-    filter === "all"
-      ? petitions
-      : petitions.filter((p) => p.status === filter);
-
   const getStatusChipClass = (status: PetitionStatus) => {
     switch (status) {
       case "resolved":
         return "bg-green-100 text-green-800";
-      case "review":
-        return "bg-yellow-100 text-yellow-800";
       case "rejected":
         return "bg-red-100 text-red-800";
+      case "review":
+        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
-  return (
-    <>
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">{t("dashboard")}</h2>
+  const handleDelete = async (code: string) => {
+    if (!confirm("Are you sure you want to delete this petition?")) return;
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title={t("totalPetitions")} value={stats.total} icon={<FileText />} color="text-indigo-600" />
-        <StatCard title={t("pending")} value={stats.pending} icon={<Clock />} color="text-yellow-600" />
-        <StatCard title={t("resolved")} value={stats.resolved} icon={<CheckCircle />} color="text-green-600" />
-        <StatCard title={t("rejected")} value={stats.rejected} icon={<XCircle />} color="text-red-600" />
-      </div>
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      alert("Admin login required.");
+      return;
+    }
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex justify-between mb-4">
-          <h3 className="text-xl font-bold">{t("petitionList")}</h3>
+    try {
+      const res = await fetch(`${API_BASE}/petitions/${code}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as PetitionStatus | "all")}
-            className="px-4 py-2 border rounded"
-          >
-            <option value="all">{t("all")}</option>
-            {(Object.keys(translations.en.status) as PetitionStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {t_status(s)}
-              </option>
-            ))}
-          </select>
-        </div>
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Delete failed");
+        return;
+      }
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
+      deletePetitionLocal(code);
+      await refreshPetitionsFromDB();
+      alert("Petition deleted.");
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting petition.");
+    }
+  };
+
+  const exportCSV = () => {
+    const headers = [
+      "Petition Code",
+      "Name",
+      "Category",
+      "Status",
+      "Phone",
+      "Email",
+      "Date",
+    ];
+    const rows = filtered.map((p) => [
+      p.petition_code,
+      p.name,
+      p.category,
+      p.status,
+      p.phone,
+      p.email,
+      p.date,
+    ]);
+
+    const csvContent =
+      [headers, ...rows]
+        .map((row) =>
+          row
+            .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+            .join(",")
+        )
+        .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `petitions_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportPDF = () => {
+    const win = window.open("", "_blank");
+    if (!win) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>Petitions Report</title>
+          <style>
+            body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
+            th { background: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h1>Petitions Report</h1>
+          <table>
+            <thead>
               <tr>
-                <th className="px-6 py-3">{t("id")}</th>
-                <th className="px-6 py-3">{t("name")}</th>
-                <th className="px-6 py-3">{t("category")}</th>
-                <th className="px-6 py-3">{lang === "en" ? "Status" : "நிலை"}</th>
-                <th className="px-6 py-3">{t("action")}</th>
+                <th>Petition Code</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Date</th>
               </tr>
             </thead>
-
             <tbody>
-              {filteredPetitions.map((p) => (
-                <tr key={p.petition_code} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4">{p.petition_code}</td>
-                  <td className="px-6 py-4">{p.name || "—"}</td>
-                  <td className="px-6 py-4">{t_categories(p.category)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full ${getStatusChipClass(p.status)}`}>
-                      {t_status(p.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => setSelectedPetition(p)}
-                      className="text-indigo-600 hover:underline"
-                    >
-                      {t("viewDetails")}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              ${filtered
+                .map(
+                  (p) => `
+                <tr>
+                  <td>${p.petition_code}</td>
+                  <td>${p.name}</td>
+                  <td>${p.category}</td>
+                  <td>${p.status}</td>
+                  <td>${p.phone}</td>
+                  <td>${p.email ?? ""}</td>
+                  <td>${p.date}</td>
+                </tr>`
+                )
+                .join("")}
             </tbody>
           </table>
+        </body>
+      </html>
+    `;
 
-          {filteredPetitions.length === 0 && (
-            <p className="text-center py-7 text-gray-500">No petitions found</p>
-          )}
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
+
+  return (
+    <div
+      className={
+        darkMode
+          ? "min-h-screen bg-slate-900 text-gray-100 transition-colors"
+          : "min-h-screen bg-gray-50 text-gray-900 transition-colors"
+      }
+    >
+      <div className="max-w-6xl mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold">{t("dashboard")}</h2>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-slate-800"
+            >
+              <Download size={16} />
+              CSV
+            </button>
+            <button
+              onClick={exportPDF}
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-slate-800"
+            >
+              <Download size={16} />
+              PDF
+            </button>
+            <button
+              onClick={() => setDarkMode((v) => !v)}
+              className="p-2 rounded-full border border-gray-300 dark:border-gray-600"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {selectedPetition && (
-        <PetitionDetailsModal
-          petition={selectedPetition}
-          onClose={() => setSelectedPetition(null)}
-          refresh={refreshPetitionsFromDB}  // ← LIVE AUTO REFRESH
-        />
-      )}
-    </>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            label="Total Petitions"
+            value={stats.total}
+            icon={<FileText size={22} />}
+            color="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200"
+          />
+          <StatCard
+            label="Pending"
+            value={stats.pending}
+            icon={<Clock size={22} />}
+            color="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200"
+          />
+          <StatCard
+            label="Resolved"
+            value={stats.resolved}
+            icon={<CheckCircle size={22} />}
+            color="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200"
+          />
+          <StatCard
+            label="Rejected"
+            value={stats.rejected}
+            icon={<XCircle size={22} />}
+            color="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200"
+          />
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow mb-6 p-4 flex flex-col md:flex-row gap-4 md:items-end">
+          <div className="flex-1">
+            <label className="block text-sm mb-1">
+              Search (ID / Name / Phone / Email)
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5" size={16} />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+                placeholder="Type to search..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">Category</label>
+            <select
+              value={categoryFilter}
+              onChange={(e) =>
+                setCategoryFilter(e.target.value as PetitionCategory | "all")
+              }
+              className="px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+            >
+              <option value="all">All</option>
+              {(Object.keys(
+                translations.en.categories
+              ) as PetitionCategory[]).map((cat) => (
+                <option key={cat} value={cat}>
+                  {t_categories(cat)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">From Date</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">To Date</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+            />
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 dark:bg-slate-700 text-left">
+                <tr>
+                  <th className="px-4 py-3">ID</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((p) => (
+                  <tr
+                    key={p.petition_code}
+                    className="border-t border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/60"
+                  >
+                    <td className="px-4 py-3 font-medium">
+                      {p.petition_code}
+                    </td>
+                    <td className="px-4 py-3">{p.name}</td>
+                    <td className="px-4 py-3">
+                      {t_categories(p.category) || "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusChipClass(
+                          p.status
+                        )}`}
+                      >
+                        {t_status(p.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-3 justify-center text-sm">
+                        <button
+                          onClick={() => setSelectedPetition(p)}
+                          className="text-indigo-500 hover:underline"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => setEditPetition(p)}
+                          className="text-blue-500 hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.petition_code)}
+                          className="text-red-500 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {pageItems.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-6 text-center text-gray-500"
+                    >
+                      No petitions found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-between items-center px-4 py-3 border-t border-gray-100 dark:border-slate-700 text-sm">
+            <div>
+              Showing{" "}
+              <strong>
+                {filtered.length === 0 ? 0 : startIndex + 1} -{" "}
+                {Math.min(startIndex + pageSize, filtered.length)}
+              </strong>{" "}
+              of <strong>{filtered.length}</strong> petitions
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-2 py-1 border rounded disabled:opacity-50 dark:border-slate-600"
+              >
+                <ChevronLeft size={16} /> Prev
+              </button>
+              <span>
+                Page <strong>{currentPage}</strong> of{" "}
+                <strong>{totalPages}</strong>
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 px-2 py-1 border rounded disabled:opacity-50 dark:border-slate-600"
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Modals */}
+        {selectedPetition && (
+          <PetitionDetailsModal
+            petition={selectedPetition}
+            onClose={() => setSelectedPetition(null)}
+          />
+        )}
+
+        {editPetition && (
+          <PetitionDetailsModal
+            petition={editPetition}
+            onClose={() => setEditPetition(null)}
+          />
+        )}
+      </div>
+    </div>
   );
 };
+
+const StatCard: React.FC<{
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  color: string;
+}> = ({ label, value, icon, color }) => (
+  <div
+    className={`rounded-xl shadow px-4 py-3 flex items-center justify-between ${color}`}
+  >
+    <div>
+      <p className="text-xs opacity-80">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+    </div>
+    <div>{icon}</div>
+  </div>
+);
 
 export default Dashboard;

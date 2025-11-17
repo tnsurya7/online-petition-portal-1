@@ -2,7 +2,9 @@ import pool from "../db.js";
 import multer from "multer";
 import fs from "fs";
 
-// Multer storage for attachments (uploads/)
+// ---------------------------
+// FILE UPLOAD CONFIG
+// ---------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = "backend/uploads";
@@ -19,7 +21,9 @@ const storage = multer.diskStorage({
 
 export const upload = multer({ storage });
 
-/** GET ALL PETITIONS */
+// ---------------------------
+// GET ALL PETITIONS
+// ---------------------------
 export const getPetitions = async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -36,13 +40,16 @@ export const getPetitions = async (req, res) => {
   }
 };
 
-/** CREATE PETITION (user submits) */
+// ---------------------------
+// CREATE PETITION
+// ---------------------------
 export const createPetition = async (req, res) => {
   try {
-    const userId = req.user?.sub; // JWT user id
-    const userEmail = req.user?.email; // JWT user email
+    const userId = req.user?.sub;
+    const userEmail = req.user?.email;
 
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId)
+      return res.status(401).json({ error: "Unauthorized" });
 
     const { name, address, phone, pincode, title, category, description } = req.body;
     const attachment = req.file ? `uploads/${req.file.filename}` : null;
@@ -51,7 +58,6 @@ export const createPetition = async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // Insert full petition
     const [result] = await pool.query(
       `INSERT INTO petitions 
         (user_id, name, address, phone, pincode, email, title, category, description, attachment)
@@ -62,7 +68,7 @@ export const createPetition = async (req, res) => {
         address,
         phone,
         pincode,
-        userEmail, 
+        userEmail,
         title,
         category,
         description,
@@ -71,25 +77,18 @@ export const createPetition = async (req, res) => {
     );
 
     const newId = result.insertId;
-
-    // Generate petition code (e.g., PET000123)
     const petitionCode = `PET${String(newId).padStart(6, "0")}`;
 
-    // Update DB with generated code
     await pool.query(
       `UPDATE petitions SET petition_code = ? WHERE id = ?`,
       [petitionCode, newId]
     );
 
-    // Fetch final petition
-    const [latest] = await pool.query(
-      "SELECT * FROM petitions WHERE id = ?",
-      [newId]
-    );
+    const [latest] = await pool.query("SELECT * FROM petitions WHERE id = ?", [newId]);
 
     res.status(201).json({
       message: "Petition submitted successfully",
-      petition: latest[0],
+      petition: latest[0]
     });
   } catch (err) {
     console.error("createPetition error:", err);
@@ -97,11 +96,13 @@ export const createPetition = async (req, res) => {
   }
 };
 
-/** UPDATE PETITION STATUS (admin only) */
+// ---------------------------
+// UPDATE STATUS ONLY (Admin)
+// ---------------------------
 export const updatePetitionStatus = async (req, res) => {
   try {
     const { status, remarks } = req.body;
-    const { id } = req.params; // id = petition_code
+    const { id } = req.params;
 
     await pool.query(
       `UPDATE petitions SET status = ?, remarks = ? WHERE petition_code = ?`,
@@ -115,7 +116,68 @@ export const updatePetitionStatus = async (req, res) => {
   }
 };
 
-/** TRACK PETITION BY petition_code + phone */
+// ---------------------------
+// FULL EDIT PETITION (Admin)
+// ---------------------------
+export const editPetition = async (req, res) => {
+  try {
+    const { id } = req.params; // petition_code
+    const { name, address, phone, pincode, title, category, description } = req.body;
+
+    await pool.query(
+      `UPDATE petitions SET 
+        name = ?, 
+        address = ?, 
+        phone = ?, 
+        pincode = ?, 
+        title = ?, 
+        category = ?, 
+        description = ?
+       WHERE petition_code = ?`,
+      [name, address, phone, pincode, title, category, description, id]
+    );
+
+    res.json({ message: "Petition updated successfully" });
+  } catch (err) {
+    console.error("editPetition error:", err);
+    res.status(500).json({ error: "Error editing petition" });
+  }
+};
+
+// ---------------------------
+// DELETE PETITION (Admin)
+// ---------------------------
+export const deletePetition = async (req, res) => {
+  try {
+    const { id } = req.params; // petition_code
+
+    const [rows] = await pool.query(
+      "SELECT attachment FROM petitions WHERE petition_code = ?",
+      [id]
+    );
+
+    if (rows.length) {
+      const filePath = rows[0].attachment;
+      if (filePath && fs.existsSync(`backend/${filePath}`)) {
+        fs.unlinkSync(`backend/${filePath}`);
+      }
+    }
+
+    await pool.query(
+      "DELETE FROM petitions WHERE petition_code = ?",
+      [id]
+    );
+
+    res.json({ message: "Petition deleted successfully" });
+  } catch (err) {
+    console.error("deletePetition error:", err);
+    res.status(500).json({ error: "Error deleting petition" });
+  }
+};
+
+// ---------------------------
+// TRACK PETITION
+// ---------------------------
 export const trackPetition = async (req, res) => {
   try {
     const { code, phone } = req.params;
