@@ -9,31 +9,42 @@ import { fileURLToPath } from "url";
 dotenv.config();
 
 const app = express();
+
+// ✅ FIXED CORS FOR RENDER
 app.use(
   cors({
-    origin: "*",
-    methods: "GET,POST,PUT,PATCH,DELETE",
+    origin: [
+      "https://online-petition-portal.vercel.app",
+      "http://localhost:3000"
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   })
 );
+
+// Handle preflight requests
+app.options("*", cors());
+
+// JSON parser
 app.use(express.json());
 
 // Determine directory paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve frontend build from ../dist
+// Static frontend build
 app.use(express.static(path.join(__dirname, "../dist")));
 
 app.use("/api/users", userRoutes);
 app.use("/api/petitions", petitionRoutes);
 
-// Serve index.html for all other routes (SPA fallback)
+// SPA fallback
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
-// ✅ Use a dynamic port to avoid "EADDRINUSE"
+// Dynamic port
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, "0.0.0.0", () => {
