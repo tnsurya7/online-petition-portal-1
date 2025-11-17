@@ -6,23 +6,9 @@ dotenv.config();
 
 console.log("🔗 Connecting to MySQL Host:", process.env.DB_HOST);
 
-let sslConfig = {};
-
-try {
-  const caPath = process.env.AIVEN_PEM_PATH || "/etc/secrets/aiven-ca.pem";
-
-  if (fs.existsSync(caPath)) {
-    console.log("🟢 Using Aiven SSL certificate");
-    sslConfig = {
-      ca: fs.readFileSync(caPath),
-      rejectUnauthorized: true
-    };
-  } else {
-    console.log("🟡 No SSL file found → SSL disabled (Local Mode)");
-  }
-} catch (err) {
-  console.log("⚠️ SSL load error, running without SSL:", err.message);
-}
+const sslConfig = {
+  ca: fs.readFileSync("./ca.pem")
+};
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,

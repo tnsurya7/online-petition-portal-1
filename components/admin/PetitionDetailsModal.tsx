@@ -88,79 +88,96 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
 
           {/* Info */}
           <div className="space-y-4 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">{t("id")}</p>
-                <p className="font-semibold">{petition.petition_code}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t("date")}</p>
-                <p className="font-semibold">{petition.date}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t("name")}</p>
-                <p className="font-semibold">{petition.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t("phone")}</p>
-                <p className="font-semibold">{petition.phone}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t("email")}</p>
-                <p className="font-semibold">{petition.email || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{t("category")}</p>
-                <p className="font-semibold">
-                  {t_categories(petition.category)}
-                </p>
-              </div>
-            </div>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            <div>
-              <p className="text-sm text-gray-600 mb-1">
-                {t("description")}
-              </p>
-              <p className="p-4 bg-gray-50 rounded-lg border">
-                {petition.description}
-              </p>
-            </div>
+    {/* Petition ID */}
+    <div>
+      <p className="text-sm text-gray-600">Petition ID</p>
+      <p className="font-semibold">{petition.petition_code}</p>
+    </div>
 
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("updateStatus")}
-              </label>
-              <select
-                value={editStatus}
-                onChange={(e) =>
-                  setEditStatus(e.target.value as PetitionStatus)
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              >
-                {(
-                  Object.keys(translations.en.status) as PetitionStatus[]
-                ).map((s) => (
-                  <option key={s} value={s}>
-                    {t_status(s)}
-                  </option>
-                ))}
-              </select>
-            </div>
+    {/* Name */}
+    <div>
+      <p className="text-sm text-gray-600">Name</p>
+      <p className="font-semibold">{petition.name}</p>
+    </div>
 
-            {/* Remarks */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("remarks")}
-              </label>
-              <textarea
-                value={editRemarks}
-                onChange={(e) => setEditRemarks(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
+    {/* Phone */}
+    <div>
+      <p className="text-sm text-gray-600">Phone</p>
+      <p className="font-semibold">{petition.phone}</p>
+    </div>
+
+    {/* Address */}
+    <div className="sm:col-span-2">
+      <p className="text-sm text-gray-600">Address</p>
+      <p className="font-semibold">{petition.address}</p>
+    </div>
+
+    {/* Pincode */}
+    <div>
+      <p className="text-sm text-gray-600">Pincode</p>
+      <p className="font-semibold">{petition.pincode}</p>
+    </div>
+
+    {/* Category */}
+    <div>
+      <p className="text-sm text-gray-600">Category</p>
+      <p className="font-semibold">{t_categories(petition.category)}</p>
+    </div>
+
+    {/* Email */}
+    <div>
+      <p className="text-sm text-gray-600">Email</p>
+      <p className="font-semibold">{petition.email || "N/A"}</p>
+    </div>
+
+    {/* Date */}
+    <div>
+      <p className="text-sm text-gray-600">Date</p>
+      <p className="font-semibold">{petition.date}</p>
+    </div>
+  </div>
+
+  {/* Description */}
+  <div>
+    <p className="text-sm text-gray-600 mb-1">Description</p>
+    <p className="p-4 bg-gray-50 rounded-lg border">
+      {petition.description}
+    </p>
+  </div>
+
+  {/* Status */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Update Status
+    </label>
+    <select
+      value={editStatus}
+      onChange={(e) => setEditStatus(e.target.value as PetitionStatus)}
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+    >
+      {(Object.keys(translations.en.status) as PetitionStatus[]).map((s) => (
+        <option key={s} value={s}>
+          {t_status(s)}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Remarks */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Remarks
+    </label>
+    <textarea
+      value={editRemarks}
+      onChange={(e) => setEditRemarks(e.target.value)}
+      rows={3}
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
+</div>
 
           {/* Buttons */}
           <div className="flex justify-end gap-4">
