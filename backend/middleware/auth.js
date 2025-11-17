@@ -1,15 +1,19 @@
+// backend/middleware/auth.js
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Extract Bearer token
 const getToken = (req) => {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) return null;
   return header.split(" ")[1];
 };
 
+// Verify JWT
 const verify = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
@@ -18,7 +22,8 @@ const verify = (token) => {
   }
 };
 
-export const requireAuth = (req, res, next) => {
+// ✔ USER authentication
+export const verifyUserToken = (req, res, next) => {
   const token = getToken(req);
   if (!token) return res.status(401).json({ error: "Missing token" });
 
@@ -29,7 +34,8 @@ export const requireAuth = (req, res, next) => {
   next();
 };
 
-export const adminAuth = (req, res, next) => {
+// ✔ ADMIN authentication
+export const verifyAdminToken = (req, res, next) => {
   const token = getToken(req);
   if (!token) return res.status(401).json({ error: "Missing token" });
 
@@ -44,5 +50,6 @@ export const adminAuth = (req, res, next) => {
   next();
 };
 
-// 👇 THIS EXPORT MUST EXIST OR RENDER WILL FAIL
-export const verifyAdminToken = adminAuth;
+// ✔ Also export aliases for compatibility
+export const requireAuth = verifyUserToken;
+export const adminAuth = verifyAdminToken;
