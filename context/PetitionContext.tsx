@@ -4,121 +4,88 @@ import React, {
   useContext,
   ReactNode,
   useCallback,
-} from 'react';
-import { Petition } from '../types';
+} from "react";
+import { Petition, PetitionStatus } from "../types";
 
-// Context Type
 interface PetitionContextType {
   petitions: Petition[];
   setPetitions: React.Dispatch<React.SetStateAction<Petition[]>>;
-  addPetition: (
-    petition: Omit<Petition, 'id' | 'status' | 'date' | 'remarks'>
-  ) => string;
   updatePetition: (
-    id: string,
-    newStatus: Petition['status'],
+    petitionCode: string,
+    newStatus: PetitionStatus,
     newRemarks: string
   ) => void;
   getPetitionByIdOrPhone: (idOrPhone: string) => Petition | undefined;
   refreshPetitionsFromDB: () => Promise<void>;
 }
 
-// Context
 const PetitionContext = createContext<PetitionContextType | undefined>(
   undefined
 );
 
-// Provider
 export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [petitions, setPetitions] = useState<Petition[]>([]);
 
-  // Add petition
-  const addPetition = (
-    petitionData: Omit<Petition, 'id' | 'status' | 'date' | 'remarks'>
-  ) => {
-    const newId = `PET${Date.now().toString().slice(-6)}`;
-
-    const newPetition: Petition = {
-      id: newId,
-      ...petitionData,
-      status: 'pending',
-      date: new Date().toLocaleDateString(),
-      remarks: '',
-    };
-
-    setPetitions((prev) => [...prev, newPetition]);
-    return newId;
-  };
-
-  // Update petition
+  /* 🔵 Update petition in state instantly */
   const updatePetition = (
-    id: string,
-    newStatus: Petition['status'],
+    petitionCode: string,
+    newStatus: PetitionStatus,
     newRemarks: string
   ) => {
     setPetitions((prev) =>
       prev.map((p) =>
-        p.id === id ? { ...p, status: newStatus, remarks: newRemarks } : p
+        p.petition_code === petitionCode
+          ? { ...p, status: newStatus, remarks: newRemarks }
+          : p
       )
     );
   };
 
-  // Refresh petitions from DB
+  /* 🔵 Load petitions from backend */
   const refreshPetitionsFromDB = useCallback(async () => {
     try {
       const res = await fetch(
-        'https://petition-backend-ow0l.onrender.com/api/petitions'
+        "https://petition-backend-ow0l.onrender.com/api/petitions"
       );
+
       const data = await res.json();
 
       const normalized = data.map((p: any) => ({
-        id: p.id || p.petition_id,
-        name: p.name || p.full_name || '',
-        category: p.category || p.petition_category || '',
-        status: (p.status || p.petition_status || 'pending').toLowerCase(),
-        phone: p.phone || p.mobile || '',
-        email: p.email || '',
-        description: p.description || p.petition_description || '',
-        date: p.date || p.created_at || '',
-        remarks: p.remarks || '',
+        petition_code: p.petition_code,
+        id: p.id,
+        name: p.name || "",
+        phone: p.phone || "",
+        email: p.email || "",
+        title: p.title || "",
+        category: p.category || "",
+        description: p.description || "",
+        status: (p.status || "pending").toLowerCase(),
+        remarks: p.remarks || "",
+        date: p.created_at || "",
       }));
 
       setPetitions(normalized);
-      console.log('Loaded petitions:', normalized.map((p: any) => p.id));
+      console.log("Loaded petitions:", normalized.map((p) => p.petition_code));
     } catch (error) {
-      console.error('Failed to refresh petitions:', error);
+      console.error("Failed to refresh petitions:", error);
     }
   }, []);
 
-  // Search petition by ID OR phone
+  /* 🔍 Search by ID or Phone */
   const getPetitionByIdOrPhone = (input: string): Petition | undefined => {
     if (!input) return undefined;
 
     const clean = input.trim().toUpperCase();
 
-    // Match by phone
     const byPhone = petitions.find((p) => p.phone === clean);
     if (byPhone) return byPhone;
 
-    // Match by ID
-    const byId = petitions.find((p) => {
-      const storedId = String(p.id || '').toUpperCase();
+    const byId = petitions.find((p) => p.petition_code === clean);
+    if (byId) return byId;
 
-      if (storedId === clean) return true;
-
-      const strip = (s: string) => s.replace(/^PET/i, '').replace(/^0+/, '');
-
-      if (strip(storedId) === strip(clean)) return true;
-
-      const numericStored = Number(strip(storedId));
-      const numericInput = Number(strip(clean));
-
-      return !isNaN(numericStored) && numericStored === numericInput;
-    });
-
-    return byId;
+    return undefined;
   };
 
   return (
@@ -126,7 +93,6 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         petitions,
         setPetitions,
-        addPetition,
         updatePetition,
         getPetitionByIdOrPhone,
         refreshPetitionsFromDB,
@@ -137,10 +103,9 @@ export const PetitionProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Hook
 export const usePetitions = () => {
   const context = useContext(PetitionContext);
   if (!context)
-    throw new Error('usePetitions must be used within a PetitionProvider');
+    throw new Error("usePetitions must be used within a PetitionProvider");
   return context;
 };
