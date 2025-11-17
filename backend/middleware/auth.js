@@ -1,50 +1,31 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 
-dotenv.config();
+export const requireAuth = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  console.warn("⚠️ WARNING: JWT_SECRET is missing. Add it in Render environment!");
-}
-
-const getToken = (req) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith("Bearer ")) return null;
-  return header.split(" ")[1];
-};
-
-const verify = (token) => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
   } catch (err) {
-    return null;
+    return res.status(401).json({ error: "Invalid Token" });
   }
 };
 
-export const verifyUserToken = (req, res, next) => {
-  const token = getToken(req);
-  if (!token) return res.status(401).json({ error: "Missing token" });
+export const adminAuth = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
 
-  const payload = verify(token);
-  if (!payload) return res.status(401).json({ error: "Invalid or expired token" });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ error: "Admin access denied" });
+    }
 
-  req.user = payload;
-  next();
-};
-
-export const verifyAdminToken = (req, res, next) => {
-  const token = getToken(req);
-  if (!token) return res.status(401).json({ error: "Missing token" });
-
-  const payload = verify(token);
-  if (!payload) return res.status(401).json({ error: "Invalid or expired token" });
-
-  if (payload.role !== "admin") {
-    return res.status(403).json({ error: "Admins only" });
+    req.admin = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid Token" });
   }
-
-  req.user = payload;
-  next();
 };
