@@ -26,9 +26,7 @@ const Dashboard: React.FC = () => {
   const { petitions, refreshPetitionsFromDB, deletePetitionLocal } =
     usePetitions();
 
-  const [selectedPetition, setSelectedPetition] = useState<Petition | null>(
-    null
-  );
+  const [selectedPetition, setSelectedPetition] = useState<Petition | null>(null);
   const [editPetition, setEditPetition] = useState<Petition | null>(null);
 
   const [search, setSearch] = useState("");
@@ -39,6 +37,10 @@ const Dashboard: React.FC = () => {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 5;
+
+  // New states for delete popup + notice message
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     refreshPetitionsFromDB();
@@ -68,9 +70,7 @@ const Dashboard: React.FC = () => {
         if (!hay.includes(s)) return false;
       }
 
-      if (categoryFilter !== "all" && p.category !== categoryFilter) {
-        return false;
-      }
+      if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
 
       const created = parseDate(p.date);
       if (created) {
@@ -118,11 +118,9 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDelete = async (code: string) => {
-    if (!confirm("Are you sure you want to delete this petition?")) return;
-
     const token = localStorage.getItem("admin_token");
     if (!token) {
-      alert("Admin login required.");
+      setNotice("Admin login required.");
       return;
     }
 
@@ -134,15 +132,19 @@ const Dashboard: React.FC = () => {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "Delete failed");
+        setNotice(data.error || "Delete failed");
         return;
       }
 
       deletePetitionLocal(code);
       await refreshPetitionsFromDB();
-      alert("Petition deleted.");
+
+      setNotice("Petition deleted successfully.");
+      setTimeout(() => setNotice(""), 3000);
+
+      setConfirmDelete(null);
     } catch {
-      alert("Error deleting petition.");
+      setNotice("Error deleting petition.");
     }
   };
 
@@ -169,9 +171,7 @@ const Dashboard: React.FC = () => {
     const csvContent =
       [headers, ...rows]
         .map((row) =>
-          row
-            .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
-            .join(",")
+          row.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
         )
         .join("\n");
 
@@ -218,15 +218,15 @@ const Dashboard: React.FC = () => {
               ${filtered
                 .map(
                   (p) => `
-                <tr>
-                  <td>${p.petition_code}</td>
-                  <td>${p.name}</td>
-                  <td>${p.category}</td>
-                  <td>${p.status}</td>
-                  <td>${p.phone}</td>
-                  <td>${p.email ?? ""}</td>
-                  <td>${p.date}</td>
-                </tr>`
+                  <tr>
+                    <td>${p.petition_code}</td>
+                    <td>${p.name}</td>
+                    <td>${p.category}</td>
+                    <td>${p.status}</td>
+                    <td>${p.phone}</td>
+                    <td>${p.email ?? ""}</td>
+                    <td>${p.date}</td>
+                  </tr>`
                 )
                 .join("")}
             </tbody>
@@ -243,6 +243,14 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="max-w-6xl mx-auto py-8 px-4">
+
+        {/* SUCCESS MESSAGE */}
+        {notice && (
+          <div className="mb-4 p-3 bg-green-100 text-green-800 border border-green-300 rounded-lg">
+            {notice}
+          </div>
+        )}
+
         {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">{t("dashboard")}</h2>
@@ -266,38 +274,16 @@ const Dashboard: React.FC = () => {
 
         {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <StatCard
-            label="Total Petitions"
-            value={stats.total}
-            icon={<FileText size={22} />}
-            color="bg-indigo-100 text-indigo-700"
-          />
-          <StatCard
-            label="Pending"
-            value={stats.pending}
-            icon={<Clock size={22} />}
-            color="bg-yellow-100 text-yellow-700"
-          />
-          <StatCard
-            label="Resolved"
-            value={stats.resolved}
-            icon={<CheckCircle size={22} />}
-            color="bg-green-100 text-green-700"
-          />
-          <StatCard
-            label="Rejected"
-            value={stats.rejected}
-            icon={<XCircle size={22} />}
-            color="bg-red-100 text-red-700"
-          />
+          <StatCard label="Total Petitions" value={stats.total} icon={<FileText size={22} />} color="bg-indigo-100 text-indigo-700" />
+          <StatCard label="Pending" value={stats.pending} icon={<Clock size={22} />} color="bg-yellow-100 text-yellow-700" />
+          <StatCard label="Resolved" value={stats.resolved} icon={<CheckCircle size={22} />} color="bg-green-100 text-green-700" />
+          <StatCard label="Rejected" value={stats.rejected} icon={<XCircle size={22} />} color="bg-red-100 text-red-700" />
         </div>
 
         {/* FILTERS */}
         <div className="bg-white rounded-xl shadow mb-6 p-4 flex flex-col md:flex-row gap-4 md:items-end">
           <div className="flex-1">
-            <label className="block text-sm mb-1">
-              Search (ID / Name / Phone / Email)
-            </label>
+            <label className="block text-sm mb-1">Search (ID / Name / Phone / Email)</label>
             <div className="relative">
               <Search className="absolute left-3 top-2.5" size={16} />
               <input
@@ -313,15 +299,11 @@ const Dashboard: React.FC = () => {
             <label className="block text-sm mb-1">Category</label>
             <select
               value={categoryFilter}
-              onChange={(e) =>
-                setCategoryFilter(e.target.value as PetitionCategory | "all")
-              }
+              onChange={(e) => setCategoryFilter(e.target.value as PetitionCategory | "all")}
               className="px-3 py-2 border rounded-lg bg-white"
             >
               <option value="all">All</option>
-              {(Object.keys(
-                translations.en.categories
-              ) as PetitionCategory[]).map((cat) => (
+              {(Object.keys(translations.en.categories) as PetitionCategory[]).map((cat) => (
                 <option key={cat} value={cat}>
                   {t_categories(cat)}
                 </option>
@@ -369,19 +351,11 @@ const Dashboard: React.FC = () => {
                     key={p.petition_code}
                     className="border-t border-gray-100 hover:bg-gray-50"
                   >
-                    <td className="px-4 py-3 font-medium">
-                      {p.petition_code}
-                    </td>
+                    <td className="px-4 py-3 font-medium">{p.petition_code}</td>
                     <td className="px-4 py-3">{p.name}</td>
+                    <td className="px-4 py-3">{t_categories(p.category) || "—"}</td>
                     <td className="px-4 py-3">
-                      {t_categories(p.category) || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusChipClass(
-                          p.status
-                        )}`}
-                      >
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusChipClass(p.status)}`}>
                         {t_status(p.status)}
                       </span>
                     </td>
@@ -400,7 +374,7 @@ const Dashboard: React.FC = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(p.petition_code)}
+                          onClick={() => setConfirmDelete(p.petition_code)}
                           className="text-red-500 hover:underline"
                         >
                           Delete
@@ -412,10 +386,7 @@ const Dashboard: React.FC = () => {
 
                 {pageItems.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="px-4 py-6 text-center text-gray-500"
-                    >
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                       No petitions found.
                     </td>
                   </tr>
@@ -460,20 +431,48 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* MODALS */}
+        {/* DETAILS & EDIT MODALS */}
         {selectedPetition && (
           <PetitionDetailsModal
             petition={selectedPetition}
             onClose={() => setSelectedPetition(null)}
           />
         )}
-
         {editPetition && (
           <PetitionDetailsModal
             petition={editPetition}
             onClose={() => setEditPetition(null)}
           />
         )}
+
+        {/* DELETE CONFIRM POPUP */}
+        {confirmDelete && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl shadow-lg w-80">
+              <h3 className="text-lg font-bold text-gray-800 mb-3">
+                Confirm Deletion
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to delete this petition?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  onClick={() => handleDelete(confirmDelete)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -485,9 +484,7 @@ const StatCard: React.FC<{
   icon: React.ReactNode;
   color: string;
 }> = ({ label, value, icon, color }) => (
-  <div
-    className={`rounded-xl shadow px-4 py-3 flex items-center justify-between ${color}`}
-  >
+  <div className={`rounded-xl shadow px-4 py-3 flex items-center justify-between ${color}`}>
     <div>
       <p className="text-xs opacity-80">{label}</p>
       <p className="text-2xl font-bold">{value}</p>

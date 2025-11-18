@@ -7,7 +7,7 @@ import { verifyAdminToken } from "../middleware/auth.js";
 const router = express.Router();
 
 /* --------------------------------------------------------
-   🗂 FILE UPLOAD: backend/uploads/
+   🗂 FILE UPLOAD
 -------------------------------------------------------- */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -18,8 +18,7 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    const fname = `${Date.now()}-${file.originalname}`;
-    cb(null, fname);
+    cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
 
@@ -45,7 +44,7 @@ router.get("/", async (req, res) => {
 });
 
 /* --------------------------------------------------------
-   2️⃣ CREATE PETITION (User Form)
+   2️⃣ CREATE PETITION (EMAIL OPTIONAL)
 -------------------------------------------------------- */
 router.post("/", upload.single("file"), async (req, res) => {
   try {
@@ -54,7 +53,7 @@ router.post("/", upload.single("file"), async (req, res) => {
       address,
       phone,
       pincode,
-      email,
+      email, // optional
       title,
       category,
       description
@@ -62,28 +61,29 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     const attachment = req.file ? `uploads/${req.file.filename}` : null;
 
-    // Validate
-    if (!name || !address || !phone || !pincode || !email || !title || !category || !description) {
-      return res.status(400).json({ error: "All fields are required" });
+    // Validate WITHOUT email
+    if (!name || !address || !phone || !pincode || !title || !category || !description) {
+      return res.status(400).json({ error: "All fields except email are required" });
     }
 
-    // Check if user exists
-    let userId;
-    const [user] = await pool.query("SELECT id FROM users WHERE email = ?", [
-      email
-    ]);
+    // If email provided → link or create user
+    let userId = null;
 
-    if (user.length > 0) {
-      userId = user[0].id;
-    } else {
-      const [newUser] = await pool.query(
-        `INSERT INTO users (name, email, phone) VALUES (?, ?, ?)`,
-        [name, email, phone]
-      );
-      userId = newUser.insertId;
+    if (email) {
+      const [user] = await pool.query("SELECT id FROM users WHERE email = ?", [email]);
+
+      if (user.length > 0) {
+        userId = user[0].id;
+      } else {
+        const [newUser] = await pool.query(
+          `INSERT INTO users (name, email, phone) VALUES (?, ?, ?)`,
+          [name, email, phone]
+        );
+        userId = newUser.insertId;
+      }
     }
 
-    // Insert petition
+    // Insert petition (email optional)
     const [result] = await pool.query(
       `INSERT INTO petitions
        (user_id, name, address, phone, pincode, email, title, category, description, attachment)
@@ -94,7 +94,7 @@ router.post("/", upload.single("file"), async (req, res) => {
         address,
         phone,
         pincode,
-        email,
+        email || null,
         title,
         category,
         description,
@@ -105,6 +105,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     const newId = result.insertId;
     const petitionCode = `PET${String(newId).padStart(6, "0")}`;
 
+    // Save petition code
     await pool.query("UPDATE petitions SET petition_code = ? WHERE id = ?", [
       petitionCode,
       newId
@@ -121,7 +122,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 });
 
 /* --------------------------------------------------------
-   3️⃣ UPDATE PETITION STATUS (Admin)
+   3️⃣ UPDATE PETITION STATUS (ADMIN)
 -------------------------------------------------------- */
 router.patch("/:code", verifyAdminToken, async (req, res) => {
   const { code } = req.params;
@@ -145,13 +146,13 @@ router.patch("/:code", verifyAdminToken, async (req, res) => {
 });
 
 /* --------------------------------------------------------
-   4️⃣ DELETE PETITION (Admin)
+   4️⃣ DELETE PETITION (ADMIN)
 -------------------------------------------------------- */
 router.delete("/:code", verifyAdminToken, async (req, res) => {
   const { code } = req.params;
 
   try {
-    // Find attachment first
+    // Find attachment
     const [rows] = await pool.query(
       "SELECT attachment FROM petitions WHERE petition_code = ?",
       [code]
@@ -167,11 +168,8 @@ router.delete("/:code", verifyAdminToken, async (req, res) => {
       fs.unlinkSync(`backend/${file}`);
     }
 
-    // Delete row
-    await pool.query(
-      "DELETE FROM petitions WHERE petition_code = ?",
-      [code]
-    );
+    // Delete petition
+    await pool.query("DELETE FROM petitions WHERE petition_code = ?", [code]);
 
     res.json({ message: "Petition deleted successfully" });
   } catch (err) {
@@ -181,10 +179,10 @@ router.delete("/:code", verifyAdminToken, async (req, res) => {
 });
 
 /* --------------------------------------------------------
-   5️⃣ TRACK PETITION (ID OR Phone)
+   5️⃣ TRACK PETITION (BY ID OR PHONE)
 -------------------------------------------------------- */
 router.get("/track", async (req, res) => {
-  const { query } = req.query; // user enters PET000123 OR 9876543210
+  const { query } = req.query;
 
   if (!query) {
     return res.status(400).json({ error: "Query is required" });
@@ -208,4 +206,5 @@ router.get("/track", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 export default router;

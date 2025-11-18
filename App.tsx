@@ -7,6 +7,8 @@ import UserRegister from "./components/UserRegister";
 import { I18nProvider } from "./context/I18nContext";
 import { PetitionProvider } from "./context/PetitionContext";
 
+import GenieAssistant from "./components/common/GenieAssistant";   // ⭐ ADDED
+
 export const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
 const App: React.FC = () => {
@@ -64,12 +66,13 @@ const App: React.FC = () => {
       <PetitionProvider>
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-indigo-100 flex flex-col">
           
-          {/* 🔵 PREMIUM HEADER */}
+          {/* HEADER */}
           <header className="bg-white shadow-md py-4 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
               <h1 className="text-2xl font-extrabold text-indigo-700 tracking-wide">
                 Online Petition Portal
               </h1>
+
               {!isAdmin && !isUser && (
                 <div className="flex gap-3">
                   <button
@@ -81,6 +84,7 @@ const App: React.FC = () => {
                   >
                     User Login
                   </button>
+
                   <button
                     className="px-4 py-2 rounded-lg border border-indigo-600 text-indigo-600 hover:bg-indigo-50 transition"
                     onClick={() => {
@@ -112,7 +116,7 @@ const App: React.FC = () => {
               />
             ) : (
               <>
-                {/* 🔥 HERO SECTION */}
+                {/* HERO SECTION */}
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-20 shadow-lg animate-fadeIn">
                   <div className="max-w-5xl mx-auto text-center px-6">
                     <h2 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-lg">
@@ -127,12 +131,13 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 🎯 CENTERED LOGIN PANEL */}
+                {/* CENTER LOGIN PANEL */}
                 <div className="flex justify-center items-center mt-10">
                   <div className="bg-white border shadow-xl rounded-2xl p-10 w-full max-w-md animate-slideUp">
                     <h3 className="text-2xl font-bold text-indigo-700 mb-2 text-center">
                       Welcome to the Citizen Portal
                     </h3>
+
                     <p className="text-gray-600 text-center mb-6">
                       Login or Register to submit and track petitions.
                     </p>
@@ -161,7 +166,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* SHOW LOGIN OR REGISTER */}
+                {/* SHOW LOGIN */}
                 {showLogin && (
                   <UserLogin
                     onUserLogin={(token) => {
@@ -176,6 +181,7 @@ const App: React.FC = () => {
                   />
                 )}
 
+                {/* SHOW REGISTER */}
                 {showRegister && (
                   <UserRegister
                     onRegistered={(token) => {
@@ -189,6 +195,9 @@ const App: React.FC = () => {
               </>
             )}
           </div>
+
+          {/* ⭐ AI Assistant (Genie Effect) */}
+          <GenieAssistant />
 
           <Footer />
         </div>

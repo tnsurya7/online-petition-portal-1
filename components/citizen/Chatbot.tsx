@@ -16,18 +16,21 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Show greeting only once
+  /** Greeting on first open */
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setMessages([{ type: 'bot', text: t('chatGreeting') }]);
+      setMessages([
+        { type: 'bot', text: t('chatGreeting') || 'Hello! How can I assist you today?' }
+      ]);
     }
   }, [isOpen, lang, t, messages.length]);
 
-  // Auto-scroll down
+  /** Auto-scroll */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /** Send Message */
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -39,7 +42,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
     try {
       const botResponse = await generatePetitionText(input);
       setMessages(prev => [...prev, { type: 'bot', text: botResponse }]);
-    } catch (error) {
+    } catch {
       setMessages(prev => [
         ...prev,
         { type: 'bot', text: t('apiError') || 'AI service unavailable.' }
@@ -49,57 +52,68 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  /* ---------- CLOSED BUTTON ---------- */
+  /* ------------------------ CLOSED BUTTON ------------------------ */
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg hover:shadow-xl transition-transform hover:scale-110 flex items-center justify-center z-40"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-indigo-700 hover:bg-indigo-800 text-white rounded-full shadow-xl hover:shadow-2xl transition-transform hover:scale-105 flex items-center justify-center z-40"
       >
         <MessageCircle size={28} />
       </button>
     );
   }
 
-  /* ---------- OPEN CHATBOT ---------- */
+  /* ------------------------ OPEN CHATBOT ------------------------ */
   return (
-    <div className="fixed bottom-6 right-6 w-[calc(100%-3rem)] sm:w-96 h-[60vh] sm:h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 animate-slide-up border border-indigo-200">
+    <div className="fixed bottom-6 right-6 w-[calc(100%-3rem)] sm:w-96 h-[60vh] sm:h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 animate-slide-up border border-indigo-300">
       
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-t-2xl flex justify-between items-center text-white">
+      <div className="bg-gradient-to-r from-indigo-700 to-indigo-800 p-4 rounded-t-2xl flex justify-between items-center text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/25 backdrop-blur rounded-full flex items-center justify-center text-2xl">🌞</div>
+          {/* SURYA AI Avatar (Professional) */}
+          <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center font-semibold text-sm">
+            SA
+          </div>
           <div>
-            <h3 className="font-bold">{t('suryaName')}</h3>
-            <p className="text-xs opacity-90">{t('aiAssistant')}</p>
+            <h3 className="font-bold text-base">SURYA AI</h3>
+            <p className="text-xs opacity-90">Virtual Assistant</p>
           </div>
         </div>
 
         <button
           onClick={() => setIsOpen(false)}
-          className="hover:text-gray-200 transition"
+          className="hover:text-gray-300 transition"
         >
           <X size={24} />
         </button>
       </div>
 
-      {/* Messages */}
+      {/* Messages Section */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex items-end gap-2 ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-            
+          <div
+            key={i}
+            className={`flex items-end gap-2 ${
+              msg.type === 'user' ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            {/* Bot Icon */}
             {msg.type === 'bot' && (
-              <div className="w-8 h-8 bg-indigo-200 rounded-full flex items-center justify-center text-lg">🌞</div>
+              <div className="w-8 h-8 bg-indigo-300 rounded-full flex items-center justify-center text-xs font-semibold">
+                SA
+              </div>
             )}
 
+            {/* Message Bubble */}
             <div
               className={`max-w-[80%] p-3 rounded-xl text-sm shadow ${
                 msg.type === 'user'
-                  ? 'bg-indigo-600 text-white rounded-br-none'
-                  : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
+                  ? 'bg-indigo-700 text-white rounded-br-none'
+                  : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none'
               }`}
             >
-              <p className="whitespace-pre-wrap">{msg.text}</p>
+              <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
             </div>
           </div>
         ))}
@@ -107,7 +121,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
         {/* Typing indicator */}
         {isLoading && (
           <div className="flex items-end gap-2 justify-start">
-            <div className="w-8 h-8 bg-indigo-200 rounded-full flex items-center justify-center text-lg">🌞</div>
+            <div className="w-8 h-8 bg-indigo-300 rounded-full flex items-center justify-center text-xs font-semibold">
+              SA
+            </div>
             <div className="p-3 bg-white border border-gray-200 rounded-xl rounded-bl-none">
               <div className="flex items-center gap-1">
                 <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
@@ -121,26 +137,27 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Input Field */}
       <div className="p-3 border-t bg-white rounded-b-2xl">
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={t('chatPlaceholder')}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Type your message..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500"
           />
           <button
             onClick={handleSend}
             disabled={isLoading}
-            className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center disabled:bg-indigo-300 transition"
+            className="w-10 h-10 bg-indigo-700 hover:bg-indigo-800 text-white rounded-full flex items-center justify-center disabled:bg-indigo-400 transition"
           >
-            <Send size={20} />
+            <Send size={18} />
           </button>
         </div>
       </div>
+
     </div>
   );
 };
