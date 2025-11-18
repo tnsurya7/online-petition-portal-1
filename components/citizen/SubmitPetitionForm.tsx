@@ -24,7 +24,9 @@ const SubmitPetitionForm: React.FC = () => {
   const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
   const handleInput = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -38,8 +40,15 @@ const SubmitPetitionForm: React.FC = () => {
     e.preventDefault();
 
     const token = localStorage.getItem("user_token");
+    const email = localStorage.getItem("user_email"); // ⭐ REQUIRED FOR BACKEND
+
     if (!token) {
       alert("⚠ Please login to submit petition.");
+      return;
+    }
+
+    if (!email) {
+      alert("⚠ Session expired. Please login again.");
       return;
     }
 
@@ -49,27 +58,34 @@ const SubmitPetitionForm: React.FC = () => {
       fd.append("address", formData.address);
       fd.append("phone", formData.phone);
       fd.append("pincode", formData.pincode);
+      fd.append("email", email); // ⭐ BACKEND NEEDS THIS
       fd.append("title", formData.title);
       fd.append("category", formData.category);
       fd.append("description", formData.description);
-      if (formData.file) fd.append("file", formData.file);
+
+      if (formData.file) {
+        fd.append("file", formData.file);
+      }
 
       const res = await fetch(`${API_BASE}/petitions`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: fd,
       });
 
       const json = await res.json();
+
       if (!res.ok) {
         return alert("❌ " + (json.error || "Error submitting petition"));
       }
 
-      // success
-      setCreatedCode(json.petition.petition_code);
+      // ⭐ Petition created successfully
+      setCreatedCode(json.petition_code || json.petition?.petition_code || "");
       setShowSuccess(true);
 
-      // reset form
+      // Reset form
       setFormData({
         name: "",
         address: "",
@@ -95,9 +111,16 @@ const SubmitPetitionForm: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5" encType="multipart/form-data">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
+          encType="multipart/form-data"
+        >
+          {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name
+            </label>
             <input
               name="name"
               required
@@ -107,8 +130,11 @@ const SubmitPetitionForm: React.FC = () => {
             />
           </div>
 
+          {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
             <textarea
               name="address"
               required
@@ -119,9 +145,12 @@ const SubmitPetitionForm: React.FC = () => {
             />
           </div>
 
+          {/* Phone + Pincode */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
               <input
                 name="phone"
                 type="tel"
@@ -132,8 +161,11 @@ const SubmitPetitionForm: React.FC = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Pincode
+              </label>
               <input
                 name="pincode"
                 type="number"
@@ -145,8 +177,11 @@ const SubmitPetitionForm: React.FC = () => {
             </div>
           </div>
 
+          {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Petition Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Petition Title
+            </label>
             <input
               name="title"
               required
@@ -156,15 +191,20 @@ const SubmitPetitionForm: React.FC = () => {
             />
           </div>
 
+          {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("category")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("category")}
+            </label>
             <select
               name="category"
               value={formData.category}
               onChange={handleInput}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
             >
-              {(Object.keys(translations.en.categories) as PetitionCategory[]).map((cat) => (
+              {(Object.keys(
+                translations.en.categories
+              ) as PetitionCategory[]).map((cat) => (
                 <option key={cat} value={cat}>
                   {t_categories(cat)}
                 </option>
@@ -172,8 +212,11 @@ const SubmitPetitionForm: React.FC = () => {
             </select>
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("description")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("description")}
+            </label>
             <textarea
               name="description"
               rows={5}
@@ -184,8 +227,11 @@ const SubmitPetitionForm: React.FC = () => {
             />
           </div>
 
+          {/* File Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("upload")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("upload")}
+            </label>
             <div className="border-2 border-blue-300 border-dashed rounded-xl p-6 text-center bg-blue-50/30">
               <div className="flex flex-col items-center gap-2">
                 <Upload className="h-10 w-10 text-blue-500" />
@@ -199,14 +245,19 @@ const SubmitPetitionForm: React.FC = () => {
                   />
                 </label>
                 {formData.file ? (
-                  <p className="text-sm text-green-600">{formData.file.name}</p>
+                  <p className="text-sm text-green-600">
+                    {formData.file.name}
+                  </p>
                 ) : (
-                  <p className="text-xs text-gray-500">PNG, JPG, PDF — Max size 10MB</p>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG, PDF — Max size 10MB
+                  </p>
                 )}
               </div>
             </div>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             className="w-full py-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 shadow-md transition"

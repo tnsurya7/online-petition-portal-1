@@ -41,18 +41,25 @@ export const getPetitions = async (req, res) => {
 };
 
 // ---------------------------
-// CREATE PETITION
+// CREATE PETITION (UPDATED)
 // ---------------------------
 export const createPetition = async (req, res) => {
   try {
     const userId = req.user?.sub;
-    const userEmail = req.user?.email;
 
     if (!userId)
       return res.status(401).json({ error: "Unauthorized" });
 
+    // ⭐ Accept email from token OR frontend
+    const userEmail = req.user?.email || req.body.email;
+
     const { name, address, phone, pincode, title, category, description } = req.body;
     const attachment = req.file ? `uploads/${req.file.filename}` : null;
+
+    // ⭐ Frontend no longer sends email, so ensure backend still has one
+    if (!userEmail) {
+      return res.status(400).json({ error: "User email missing. Please log in again." });
+    }
 
     if (!name || !address || !phone || !pincode || !title || !category || !description) {
       return res.status(400).json({ error: "All fields are required" });
@@ -97,7 +104,7 @@ export const createPetition = async (req, res) => {
 };
 
 // ---------------------------
-// UPDATE STATUS ONLY (Admin)
+// UPDATE STATUS ONLY (ADMIN)
 // ---------------------------
 export const updatePetitionStatus = async (req, res) => {
   try {
@@ -117,7 +124,7 @@ export const updatePetitionStatus = async (req, res) => {
 };
 
 // ---------------------------
-// FULL EDIT PETITION (Admin)
+// FULL EDIT PETITION (ADMIN)
 // ---------------------------
 export const editPetition = async (req, res) => {
   try {
@@ -145,7 +152,7 @@ export const editPetition = async (req, res) => {
 };
 
 // ---------------------------
-// DELETE PETITION (Admin)
+// DELETE PETITION (ADMIN)
 // ---------------------------
 export const deletePetition = async (req, res) => {
   try {
