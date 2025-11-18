@@ -1,48 +1,28 @@
-import React, { useState } from 'react';
-import Header from './shared/Header';
-import HomePage from './citizen/HomePage';
-import SubmitPetitionForm from './citizen/SubmitPetitionForm';
-import TrackPetition from './citizen/TrackPetition';
-import AdminLogin from './admin/AdminLogin';
-import Chatbot from './citizen/Chatbot';
+import React, { useState } from "react";
+import Header from "./shared/Header";
+import HomePage from "./citizen/HomePage";
+import SubmitPetitionForm from "./citizen/SubmitPetitionForm";
+import TrackPetition from "./citizen/TrackPetition";
+import Chatbot from "./citizen/Chatbot";
 
-interface CitizenPortalProps {
-  view: string;
-  setView: (view: string) => void;
-  onAdminLogin: () => void;
-  isUser: boolean;             // ⭐ get from App.tsx
+interface Props {
+  onUserLogout: () => void;
 }
 
-const CitizenPortal: React.FC<CitizenPortalProps> = ({ view, setView, onAdminLogin, isUser }) => {
+const CitizenPortal: React.FC<Props> = ({ onUserLogout }) => {
+  const [view, setView] = useState<"home" | "submit" | "track">("home");
   const [chatOpen, setChatOpen] = useState(false);
 
-  // ⭐ USER LOGOUT HANDLER
-  const handleUserLogout = () => {
-    localStorage.removeItem("user_token");
-    localStorage.removeItem("user_email");
-    window.location.reload();
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e6f2ff] via-white to-[#cfe8ff]">
-
-      {/* ⭐ Header now shows logout only when isUser = true */}
-      <Header
-        view={view}
-        setView={setView}
-        isAdmin={false}
-        isUser={isUser}            // ✔ dynamic
-        onLogout={handleUserLogout}
-      />
+    <div>
+      <Header isAdmin={false} isUser={true} onLogout={onUserLogout} view={view} setView={setView} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {view === 'home' && <HomePage setView={setView} />}
-        {view === 'submit' && <SubmitPetitionForm />}
-        {view === 'track' && <TrackPetition />}
-        {view === 'admin' && <AdminLogin onLoginSuccess={onAdminLogin} />}
+        {view === "home" && <HomePage setView={setView} />}
+        {view === "submit" && <SubmitPetitionForm />}
+        {view === "track" && <TrackPetition />}
       </main>
 
-      {/* Chatbot */}
       <Chatbot isOpen={chatOpen} setIsOpen={setChatOpen} />
     </div>
   );

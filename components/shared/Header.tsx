@@ -1,91 +1,56 @@
-import React from 'react';
-import { useI18n } from '../../context/I18nContext';
-import { LogOut } from 'lucide-react';
+import React from "react";
+import { LogOut } from "lucide-react";
+import { useI18n } from "../../context/I18nContext";
 
-interface HeaderProps {
-  isAdmin: boolean;
-  isUser?: boolean;            // ⭐ SHOW LOGOUT FOR USERS
-  view?: string;
-  setView?: (view: string) => void;
-  onLogout?: () => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ isAdmin, isUser, view, setView, onLogout }) => {
+const Header = ({ isAdmin, isUser, view, setView, onLogout }) => {
   const { lang, setLang } = useI18n();
 
-  const labels: Record<string, Record<string, string>> = {
-    home: { en: "Home", ta: "முகப்பு" },
-    submit: { en: "Submit Petition", ta: "மனு சமர்ப்பிக்க" },
-    track: { en: "Track Petition", ta: "மனு நிலை" },
-    admin: { en: "Admin", ta: "நிர்வாகம்" },
-  };
-
-  const NavButton: React.FC<{ tab: string }> = ({ tab }) => (
+  const NavButton = ({ label, keyName }) => (
     <button
-      onClick={() => setView && setView(tab)}
-      className={`px-4 md:px-6 py-3 font-medium transition-all duration-200 text-sm md:text-base ${
-        view === tab
-          ? "text-indigo-600 border-b-2 border-indigo-600"
-          : "text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md"
+      onClick={() => setView(keyName)}
+      className={`px-4 py-2 ${
+        view === keyName ? "text-indigo-600 border-b-2 border-indigo-600" : "text-gray-600"
       }`}
     >
-      {labels[tab][lang]}
+      {label}
     </button>
   );
 
   return (
-    <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-30">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
+    <header className="bg-white shadow-sm sticky top-0 z-30 py-4">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
 
-          {/* 🔵 TITLE only for user home */}
-          {!isAdmin && view === "home" && (
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-indigo-700">
-                Tamil Nadu Online Petition Portal
-              </h1>
-              <p className="text-xs md:text-sm text-gray-500">
-                Submit your grievances and requests online.
-              </p>
-            </div>
-          )}
+        <h1 className="text-xl font-bold text-indigo-700">
+          Tamil Nadu Online Petition Portal
+        </h1>
 
-          {/* 🔵 RIGHT SIDE: language + logout */}
-          <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-3">
 
-            {/* ⭐ LANGUAGE SWITCH */}
+          <button
+            onClick={() => setLang(lang === "en" ? "ta" : "en")}
+            className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg"
+          >
+            {lang === "en" ? "தமிழ்" : "English"}
+          </button>
+
+          {(isUser || isAdmin) && (
             <button
-              onClick={() => setLang(lang === "en" ? "ta" : "en")}
-              className="px-3 py-2 text-sm md:text-base bg-indigo-100 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-200 transition"
+              onClick={onLogout}
+              className="flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg"
             >
-              {lang === "en" ? "தமிழ்" : "English"}
+              <LogOut size={18} /> Logout
             </button>
-
-            {/* ⭐ LOGOUT for user or admin */}
-            {(isAdmin || isUser) && (
-              <button
-                onClick={onLogout}
-                className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm md:text-base"
-              >
-                <LogOut size={18} />
-                <span className="hidden md:inline">Logout</span>
-              </button>
-            )}
-
-          </div>
+          )}
         </div>
-
-        {/* ⭐ NAVIGATION only for user */}
-        {!isAdmin && setView && (
-          <nav className="mt-4 border-t pt-1">
-            <div className="flex items-center justify-start -mb-px">
-              {["home", "submit", "track", "admin"].map((tab) => (
-                <NavButton key={tab} tab={tab} />
-              ))}
-            </div>
-          </nav>
-        )}
       </div>
+
+      {!isAdmin && isUser && (
+        <nav className="border-t mt-3 flex gap-4 px-4">
+          <NavButton keyName="home" label="Home" />
+          <NavButton keyName="submit" label="Submit Petition" />
+          <NavButton keyName="track" label="Track Petition" />
+        </nav>
+      )}
     </header>
   );
 };
