@@ -10,9 +10,10 @@ interface CitizenPortalProps {
   view: string;
   setView: (view: string) => void;
   onAdminLogin: () => void;
+  isUser: boolean;             // ⭐ get from App.tsx
 }
 
-const CitizenPortal: React.FC<CitizenPortalProps> = ({ view, setView, onAdminLogin }) => {
+const CitizenPortal: React.FC<CitizenPortalProps> = ({ view, setView, onAdminLogin, isUser }) => {
   const [chatOpen, setChatOpen] = useState(false);
 
   // ⭐ USER LOGOUT HANDLER
@@ -24,14 +25,14 @@ const CitizenPortal: React.FC<CitizenPortalProps> = ({ view, setView, onAdminLog
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e6f2ff] via-white to-[#cfe8ff]">
-      
-      {/* ⭐ Header now receives isUser + onLogout */}
+
+      {/* ⭐ Header now shows logout only when isUser = true */}
       <Header
         view={view}
         setView={setView}
         isAdmin={false}
-        isUser={true}                 // ⭐ show logout
-        onLogout={handleUserLogout}   // ⭐ logout action
+        isUser={isUser}            // ✔ dynamic
+        onLogout={handleUserLogout}
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">

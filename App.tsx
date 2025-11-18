@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Footer from "./components/Footer";
 import CitizenPortal from "./components/CitizenPortal";
 import AdminPortal from "./components/AdminPortal";
@@ -6,60 +6,18 @@ import UserLogin from "./components/UserLogin";
 import UserRegister from "./components/UserRegister";
 import { I18nProvider } from "./context/I18nContext";
 import { PetitionProvider } from "./context/PetitionContext";
-import Chatbot from "./components/citizen/Chatbot";   // ⭐ USE ONLY CHATBOT
+import Chatbot from "./components/citizen/Chatbot";
 
 export const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
 const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isUser, setIsUser] = useState(false);
-  const [view, setView] = useState("home");
 
-  const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
+  // ⭐ Main navigation
+  const [view, setView] = useState<"home" | "login" | "register">("home");
 
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const [chatOpen, setChatOpen] = useState(false);  // ⭐ CHATBOT STATE
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const token = localStorage.getItem("admin_token");
-      if (!token) return;
-
-      try {
-        const res = await fetch(`${API_BASE}/users/admin/verify`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) setIsAdmin(true);
-        else localStorage.removeItem("admin_token");
-      } catch {}
-    };
-
-    const checkUser = async () => {
-      const token = localStorage.getItem("user_token");
-      if (!token) return;
-
-      try {
-        const res = await fetch(`${API_BASE}/users/verify`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) setIsUser(true);
-        else localStorage.removeItem("user_token");
-      } catch {}
-    };
-
-    Promise.all([checkAdmin(), checkUser()]).finally(() =>
-      setCheckingAuth(false)
-    );
-  }, []);
-
-  if (checkingAuth) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center text-xl font-semibold">
-        Loading...
-      </div>
-    );
-  }
+  const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <I18nProvider>
@@ -77,20 +35,14 @@ const App: React.FC = () => {
                 <div className="flex gap-3">
                   <button
                     className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition"
-                    onClick={() => {
-                      setShowLogin(true);
-                      setShowRegister(false);
-                    }}
+                    onClick={() => setView("login")}
                   >
-                    User Login
+                    Login
                   </button>
 
                   <button
                     className="px-4 py-2 rounded-lg border border-indigo-600 text-indigo-600 hover:bg-indigo-50 transition"
-                    onClick={() => {
-                      setShowRegister(true);
-                      setShowLogin(false);
-                    }}
+                    onClick={() => setView("register")}
                   >
                     Register
                   </button>
@@ -101,7 +53,9 @@ const App: React.FC = () => {
 
           {/* BODY */}
           <div className="flex-grow">
-            {isAdmin ? (
+
+            {/* ADMIN SECTION */}
+            {isAdmin && (
               <AdminPortal
                 onLogout={() => {
                   localStorage.removeItem("admin_token");
@@ -109,95 +63,58 @@ const App: React.FC = () => {
                   setView("home");
                 }}
               />
-            ) : isUser ? (
+            )}
+
+            {/* USER SECTION */}
+            {isUser && (
               <CitizenPortal
                 view={view}
                 setView={setView}
+                isUser={true}
                 onAdminLogin={() => setIsAdmin(true)}
               />
-            ) : (
-              <>
-                {/* HERO */}
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-20 shadow-lg animate-fadeIn">
-                  <div className="max-w-5xl mx-auto text-center px-6">
-                    <h2 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-lg">
-                      Raise Your Voice,
-                      <br />
-                      Strengthen Your Community
-                    </h2>
-                    <p className="text-lg opacity-90 max-w-2xl mx-auto">
-                      Submit petitions, track progress, and improve your community.
-                    </p>
-                  </div>
-                </div>
+            )}
 
-                {/* LOGIN PANEL */}
-                <div className="flex justify-center items-center mt-10">
-                  <div className="bg-white border shadow-xl rounded-2xl p-10 w-full max-w-md animate-slideUp">
-                    <h3 className="text-2xl font-bold text-indigo-700 mb-2 text-center">
-                      Welcome to the Citizen Portal
-                    </h3>
-                    <p className="text-gray-600 text-center mb-6">
-                      Login or Register to continue.
-                    </p>
+            {/* LOGIN PAGE */}
+            {!isAdmin && !isUser && view === "login" && (
+              <UserLogin
+                onUserLogin={(token, email) => {
+                  localStorage.setItem("user_token", token);
+                  localStorage.setItem("user_email", email);
+                  setIsUser(true);
+                  setView("home");
+                }}
+                onSwitchToRegister={() => setView("register")}
+              />
+            )}
 
-                    <div className="flex flex-col gap-4">
-                      <button
-                        className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                        onClick={() => {
-                          setShowLogin(true);
-                          setShowRegister(false);
-                        }}
-                      >
-                        Login
-                      </button>
+            {/* REGISTER PAGE */}
+            {!isAdmin && !isUser && view === "register" && (
+              <UserRegister
+                onRegistered={(token, email) => {
+                  localStorage.setItem("user_token", token);
+                  localStorage.setItem("user_email", email);
+                  setIsUser(true);
+                  setView("home");
+                }}
+                onCancel={() => setView("login")}
+              />
+            )}
 
-                      <button
-                        className="w-full py-3 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition"
-                        onClick={() => {
-                          setShowRegister(true);
-                          setShowLogin(false);
-                        }}
-                      >
-                        Register
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* LOGIN */}
-                {showLogin && (
-                  <UserLogin
-                    onUserLogin={(token) => {
-                      localStorage.setItem("user_token", token);
-                      setIsUser(true);
-                      setShowLogin(false);
-                    }}
-                    onSwitchToRegister={() => {
-                      setShowLogin(false);
-                      setShowRegister(true);
-                    }}
-                  />
-                )}
-
-                {/* REGISTER */}
-                {showRegister && (
-                  <UserRegister
-                    onRegistered={(token) => {
-                      localStorage.setItem("user_token", token);
-                      setIsUser(true);
-                      setShowRegister(false);
-                    }}
-                    onCancel={() => setShowRegister(false)}
-                  />
-                )}
-              </>
+            {/* HOME LANDING PAGE */}
+            {!isAdmin && !isUser && view === "home" && (
+              <div className="text-center py-20">
+                <h2 className="text-4xl text-indigo-600 font-bold mb-6">
+                  Welcome to Online Petition Portal
+                </h2>
+                <p className="text-gray-700 text-lg">
+                  Please login or register to continue.
+                </p>
+              </div>
             )}
           </div>
 
-          {/* ⭐ SURYA AI Chatbot (with genie effect) */}
           <Chatbot isOpen={chatOpen} setIsOpen={setChatOpen} />
-
           <Footer />
         </div>
       </PetitionProvider>

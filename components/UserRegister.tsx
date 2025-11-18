@@ -3,7 +3,7 @@ import React, { useState, useRef } from "react";
 import { API_BASE } from "../App";
 
 interface Props {
-  onRegistered: (token: string) => void;
+  onRegistered: (token: string, email: string) => void;
   onCancel?: () => void;
 }
 
@@ -19,7 +19,6 @@ const UserRegister: React.FC<Props> = ({ onRegistered, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
 
-  const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmRef = useRef<HTMLInputElement>(null);
@@ -60,50 +59,60 @@ const UserRegister: React.FC<Props> = ({ onRegistered, onCancel }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Register failed");
 
+      // Save token + email
       localStorage.setItem("user_token", data.token);
+      localStorage.setItem("user_email", email);
 
+      // Success toast
       setToastVisible(true);
+
       setTimeout(() => {
         setToastVisible(false);
-        onRegistered(data.token);
+        onRegistered(data.token, email);
       }, 1200);
+
     } catch (err: any) {
-      setErr(err.message || "Register error");
+      setErr(err.message || "Registration error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 mt-8">
-      <h2 className="text-2xl font-bold mb-4">Register</h2>
+    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 mt-10">
+      <h2 className="text-2xl font-bold mb-4 text-indigo-700">Create an Account</h2>
 
-      {err && <p className="text-sm text-red-600 mb-2">{err}</p>}
+      {err && <p className="text-sm text-red-600 mb-3">{err}</p>}
 
       <form onSubmit={submit} className="space-y-4">
+
+        {/* Name */}
         <div>
-          <label className="block text-sm">Name</label>
+          <label className="block text-sm font-medium">Full Name</label>
           <input
-            ref={nameRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full px-3 py-2 border rounded-md"
+            required
           />
         </div>
 
+        {/* Email */}
         <div>
-          <label className="block text-sm">Email</label>
+          <label className="block text-sm font-medium">Email</label>
           <input
             ref={emailRef}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3 py-2 border rounded-md"
+            required
           />
         </div>
 
+        {/* Password */}
         <div>
-          <label className="block text-sm">Password</label>
+          <label className="block text-sm font-medium">Password</label>
           <div className="relative">
             <input
               ref={passwordRef}
@@ -117,8 +126,8 @@ const UserRegister: React.FC<Props> = ({ onRegistered, onCancel }) => {
                 else setStrength("Strong");
               }}
               className="w-full px-3 py-2 border rounded-md"
+              required
             />
-
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -130,24 +139,21 @@ const UserRegister: React.FC<Props> = ({ onRegistered, onCancel }) => {
 
           {strength && (
             <p className="text-xs mt-1">
-              Password strength:{" "}
-              <span
-                className={
-                  strength === "Weak"
-                    ? "text-red-600"
-                    : strength === "Medium"
-                    ? "text-yellow-600"
-                    : "text-green-600"
-                }
-              >
+              Strength:{" "}
+              <span className={
+                strength === "Weak" ? "text-red-600" :
+                strength === "Medium" ? "text-yellow-600" :
+                "text-green-600"
+              }>
                 {strength}
               </span>
             </p>
           )}
         </div>
 
+        {/* Confirm Password */}
         <div>
-          <label className="block text-sm">Confirm Password</label>
+          <label className="block text-sm font-medium">Confirm Password</label>
           <div className="relative">
             <input
               ref={confirmRef}
@@ -155,6 +161,7 @@ const UserRegister: React.FC<Props> = ({ onRegistered, onCancel }) => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
+              required
             />
 
             <button
@@ -167,19 +174,20 @@ const UserRegister: React.FC<Props> = ({ onRegistered, onCancel }) => {
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
+        {/* Buttons */}
+        <div className="flex justify-between items-center pt-2">
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50"
+            className="px-5 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50"
           >
-            {loading ? "Creating..." : "Create account"}
+            {loading ? "Creating..." : "Register"}
           </button>
 
           <button
             type="button"
             onClick={() => onCancel && onCancel()}
-            className="text-sm text-gray-500"
+            className="text-sm text-gray-500 hover:text-gray-700"
           >
             Cancel
           </button>
