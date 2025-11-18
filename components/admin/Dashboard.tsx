@@ -14,8 +14,6 @@ import {
   CheckCircle,
   XCircle,
   Search,
-  Moon,
-  Sun,
   Download,
   ChevronLeft,
   ChevronRight,
@@ -25,16 +23,13 @@ const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
 const Dashboard: React.FC = () => {
   const { t, t_categories, t_status } = useI18n();
-  const {
-    petitions,
-    refreshPetitionsFromDB,
-    deletePetitionLocal,
-  } = usePetitions();
+  const { petitions, refreshPetitionsFromDB, deletePetitionLocal } =
+    usePetitions();
 
-  const [selectedPetition, setSelectedPetition] = useState<Petition | null>(null);
+  const [selectedPetition, setSelectedPetition] = useState<Petition | null>(
+    null
+  );
   const [editPetition, setEditPetition] = useState<Petition | null>(null);
-
-  const [darkMode, setDarkMode] = useState(false);
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<PetitionCategory | "all">(
@@ -42,7 +37,6 @@ const Dashboard: React.FC = () => {
   );
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
@@ -100,10 +94,6 @@ const Dashboard: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const pageItems = filtered.slice(startIndex, startIndex + pageSize);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, categoryFilter, dateFrom, dateTo]);
-
   const stats = useMemo(
     () => ({
       total: petitions.length,
@@ -151,8 +141,7 @@ const Dashboard: React.FC = () => {
       deletePetitionLocal(code);
       await refreshPetitionsFromDB();
       alert("Petition deleted.");
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Error deleting petition.");
     }
   };
@@ -204,7 +193,7 @@ const Dashboard: React.FC = () => {
         <head>
           <title>Petitions Report</title>
           <style>
-            body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
+            body { font-family: system-ui; padding: 20px; }
             h1 { text-align: center; margin-bottom: 20px; }
             table { border-collapse: collapse; width: 100%; }
             th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
@@ -246,80 +235,65 @@ const Dashboard: React.FC = () => {
       </html>
     `;
 
-    win.document.open();
     win.document.write(html);
     win.document.close();
-    win.focus();
     win.print();
   };
 
   return (
-    <div
-      className={
-        darkMode
-          ? "min-h-screen bg-slate-900 text-gray-100 transition-colors"
-          : "min-h-screen bg-gray-50 text-gray-900 transition-colors"
-      }
-    >
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="max-w-6xl mx-auto py-8 px-4">
-        {/* Header */}
+        {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">{t("dashboard")}</h2>
 
           <div className="flex items-center gap-3">
             <button
               onClick={exportCSV}
-              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-slate-800"
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100"
             >
-              <Download size={16} />
-              CSV
+              <Download size={16} /> CSV
             </button>
+
             <button
               onClick={exportPDF}
-              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-slate-800"
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100"
             >
-              <Download size={16} />
-              PDF
-            </button>
-            <button
-              onClick={() => setDarkMode((v) => !v)}
-              className="p-2 rounded-full border border-gray-300 dark:border-gray-600"
-            >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              <Download size={16} /> PDF
             </button>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <StatCard
             label="Total Petitions"
             value={stats.total}
             icon={<FileText size={22} />}
-            color="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200"
+            color="bg-indigo-100 text-indigo-700"
           />
           <StatCard
             label="Pending"
             value={stats.pending}
             icon={<Clock size={22} />}
-            color="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200"
+            color="bg-yellow-100 text-yellow-700"
           />
           <StatCard
             label="Resolved"
             value={stats.resolved}
             icon={<CheckCircle size={22} />}
-            color="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200"
+            color="bg-green-100 text-green-700"
           />
           <StatCard
             label="Rejected"
             value={stats.rejected}
             icon={<XCircle size={22} />}
-            color="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200"
+            color="bg-red-100 text-red-700"
           />
         </div>
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow mb-6 p-4 flex flex-col md:flex-row gap-4 md:items-end">
+        {/* FILTERS */}
+        <div className="bg-white rounded-xl shadow mb-6 p-4 flex flex-col md:flex-row gap-4 md:items-end">
           <div className="flex-1">
             <label className="block text-sm mb-1">
               Search (ID / Name / Phone / Email)
@@ -329,7 +303,7 @@ const Dashboard: React.FC = () => {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+                className="w-full pl-9 pr-3 py-2 border rounded-lg bg-white"
                 placeholder="Type to search..."
               />
             </div>
@@ -342,7 +316,7 @@ const Dashboard: React.FC = () => {
               onChange={(e) =>
                 setCategoryFilter(e.target.value as PetitionCategory | "all")
               }
-              className="px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+              className="px-3 py-2 border rounded-lg bg-white"
             >
               <option value="all">All</option>
               {(Object.keys(
@@ -361,7 +335,7 @@ const Dashboard: React.FC = () => {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+              className="px-3 py-2 border rounded-lg bg-white"
             />
           </div>
 
@@ -371,16 +345,16 @@ const Dashboard: React.FC = () => {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 dark:border-slate-700"
+              className="px-3 py-2 border rounded-lg bg-white"
             />
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden">
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-100 dark:bg-slate-700 text-left">
+              <thead className="bg-gray-100 text-left">
                 <tr>
                   <th className="px-4 py-3">ID</th>
                   <th className="px-4 py-3">Name</th>
@@ -393,7 +367,7 @@ const Dashboard: React.FC = () => {
                 {pageItems.map((p) => (
                   <tr
                     key={p.petition_code}
-                    className="border-t border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/60"
+                    className="border-t border-gray-100 hover:bg-gray-50"
                   >
                     <td className="px-4 py-3 font-medium">
                       {p.petition_code}
@@ -450,8 +424,8 @@ const Dashboard: React.FC = () => {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="flex justify-between items-center px-4 py-3 border-t border-gray-100 dark:border-slate-700 text-sm">
+          {/* PAGINATION */}
+          <div className="flex justify-between items-center px-4 py-3 border-t border-gray-100 text-sm">
             <div>
               Showing{" "}
               <strong>
@@ -465,18 +439,20 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 px-2 py-1 border rounded disabled:opacity-50 dark:border-slate-600"
+                className="flex items-center gap-1 px-2 py-1 border rounded disabled:opacity-50"
               >
                 <ChevronLeft size={16} /> Prev
               </button>
+
               <span>
                 Page <strong>{currentPage}</strong> of{" "}
                 <strong>{totalPages}</strong>
               </span>
+
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-2 py-1 border rounded disabled:opacity-50 dark:border-slate-600"
+                className="flex items-center gap-1 px-2 py-1 border rounded disabled:opacity-50"
               >
                 Next <ChevronRight size={16} />
               </button>
@@ -484,7 +460,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Modals */}
+        {/* MODALS */}
         {selectedPetition && (
           <PetitionDetailsModal
             petition={selectedPetition}
