@@ -6,9 +6,7 @@ import UserLogin from "./components/UserLogin";
 import UserRegister from "./components/UserRegister";
 import { I18nProvider } from "./context/I18nContext";
 import { PetitionProvider } from "./context/PetitionContext";
-
-// ✅ CORRECT FIX — your GenieAssistant is in /components/
-import GenieAssistant from "./components/GenieAssistant";
+import Chatbot from "./components/citizen/Chatbot";   // ⭐ USE ONLY CHATBOT
 
 export const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
@@ -21,6 +19,7 @@ const App: React.FC = () => {
   const [showRegister, setShowRegister] = useState(false);
 
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);  // ⭐ CHATBOT STATE
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -127,7 +126,7 @@ const App: React.FC = () => {
                       Strengthen Your Community
                     </h2>
                     <p className="text-lg opacity-90 max-w-2xl mx-auto">
-                      Submit petitions, track progress, and bring real improvements.
+                      Submit petitions, track progress, and improve your community.
                     </p>
                   </div>
                 </div>
@@ -196,8 +195,8 @@ const App: React.FC = () => {
             )}
           </div>
 
-          {/* SURYA AI Assistant */}
-          <GenieAssistant />
+          {/* ⭐ SURYA AI Chatbot (with genie effect) */}
+          <Chatbot isOpen={chatOpen} setIsOpen={setChatOpen} />
 
           <Footer />
         </div>

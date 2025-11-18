@@ -20,7 +20,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
-        { type: 'bot', text: t('chatGreeting') || 'Hello! How can I assist you today?' }
+        { type: 'bot', text: t('chatGreeting') || 'How can I assist you today?' }
       ]);
     }
   }, [isOpen, lang, t, messages.length]);
@@ -30,7 +30,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  /** Send Message */
+  /** Send message */
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -64,14 +64,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
     );
   }
 
-  /* ------------------------ OPEN CHATBOT ------------------------ */
+  /* ------------------------ OPEN CHATBOT (GENIE ANIMATION) ------------------------ */
   return (
-    <div className="fixed bottom-6 right-6 w-[calc(100%-3rem)] sm:w-96 h-[60vh] sm:h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 animate-slide-up border border-indigo-300">
+    <div
+      className={`fixed bottom-6 right-6 w-[calc(100%-3rem)] sm:w-96 h-[60vh] sm:h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-indigo-300 
       
+      transition-all duration-300 origin-bottom-right
+      ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10'}
+      `}
+    >
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-700 to-indigo-800 p-4 rounded-t-2xl flex justify-between items-center text-white">
         <div className="flex items-center gap-3">
-          {/* SURYA AI Avatar (Professional) */}
           <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center font-semibold text-sm">
             SA
           </div>
@@ -89,7 +93,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
         </button>
       </div>
 
-      {/* Messages Section */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg, i) => (
           <div
@@ -157,7 +161,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, setIsOpen }) => {
           </button>
         </div>
       </div>
-
     </div>
   );
 };
