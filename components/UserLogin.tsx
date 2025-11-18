@@ -28,7 +28,14 @@ const UserLogin: React.FC<Props> = ({ onUserLogin, onSwitchToRegister }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
 
+      // ⭐ SAVE TOKEN
       localStorage.setItem("user_token", data.token);
+
+      // ⭐ SAVE EMAIL (Required for petition form)
+      if (data.user && data.user.email) {
+        localStorage.setItem("user_email", data.user.email);
+      }
+
       onUserLogin(data.token);
     } catch (err: any) {
       setError(err.message || "Login error");

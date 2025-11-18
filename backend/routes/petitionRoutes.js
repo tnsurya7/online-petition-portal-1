@@ -181,20 +181,26 @@ router.delete("/:code", verifyAdminToken, async (req, res) => {
 });
 
 /* --------------------------------------------------------
-   5️⃣ TRACK PETITION (ID + Phone)
+   5️⃣ TRACK PETITION (ID OR Phone)
 -------------------------------------------------------- */
-router.get("/track/search", async (req, res) => {
-  const { id, phone } = req.query;
+router.get("/track", async (req, res) => {
+  const { query } = req.query; // user enters PET000123 OR 9876543210
+
+  if (!query) {
+    return res.status(400).json({ error: "Query is required" });
+  }
 
   try {
     const [rows] = await pool.query(
-      `SELECT * FROM petitions 
-       WHERE petition_code = ? AND phone = ?`,
-      [id, phone]
+      `SELECT * FROM petitions
+       WHERE petition_code = ? OR phone = ?
+       LIMIT 1`,
+      [query, query]
     );
 
-    if (rows.length === 0)
+    if (rows.length === 0) {
       return res.status(404).json({ error: "No petition found" });
+    }
 
     res.json(rows[0]);
   } catch (err) {
@@ -202,5 +208,4 @@ router.get("/track/search", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 export default router;

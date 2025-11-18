@@ -38,8 +38,15 @@ const SubmitPetitionForm: React.FC = () => {
     e.preventDefault();
 
     const token = localStorage.getItem("user_token");
+    const email = localStorage.getItem("user_email"); // ⭐ REQUIRED FIELD
+
     if (!token) {
       alert("⚠ Please login to submit petition.");
+      return;
+    }
+
+    if (!email) {
+      alert("⚠ Email missing. Please login again.");
       return;
     }
 
@@ -49,6 +56,7 @@ const SubmitPetitionForm: React.FC = () => {
       fd.append("address", formData.address);
       fd.append("phone", formData.phone);
       fd.append("pincode", formData.pincode);
+      fd.append("email", email); // ⭐ FIXED: REQUIRED BY BACKEND
       fd.append("title", formData.title);
       fd.append("category", formData.category);
       fd.append("description", formData.description);
@@ -62,11 +70,15 @@ const SubmitPetitionForm: React.FC = () => {
 
       const json = await res.json();
 
-      if (!res.ok) return alert("❌ " + (json.error || "Error submitting petition"));
+      if (!res.ok) {
+        return alert("❌ " + (json.error || "Error submitting petition"));
+      }
 
-      setCreatedCode(json.petition.petition_code);
+      // Petition created successfully
+      setCreatedCode(json.petition_code);
       setShowSuccess(true);
 
+      // Reset form
       setFormData({
         name: "",
         address: "",

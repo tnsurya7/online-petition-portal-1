@@ -3,10 +3,9 @@ import { Search } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 
 const TrackPetition: React.FC = () => {
-  const { t, t_categories, t_status, lang } = useI18n();
+  const { t, t_categories, t_status } = useI18n();
 
-  const [petitionId, setPetitionId] = useState("");
-  const [phone, setPhone] = useState("");
+  const [query, setQuery] = useState("");
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,8 +13,8 @@ const TrackPetition: React.FC = () => {
   const API_BASE = "https://petition-backend-ow0l.onrender.com/api";
 
   const handleTrack = async () => {
-    if (!petitionId.trim() || !phone.trim()) {
-      setError("Please enter both Petition ID and Phone Number");
+    if (!query.trim()) {
+      setError("Please enter Petition ID or Phone Number");
       return;
     }
 
@@ -25,7 +24,7 @@ const TrackPetition: React.FC = () => {
 
     try {
       const res = await fetch(
-        `${API_BASE}/petitions/track/${petitionId.trim()}/${phone.trim()}`
+        `${API_BASE}/petitions/track?query=${query.trim()}`
       );
 
       const json = await res.json();
@@ -60,26 +59,17 @@ const TrackPetition: React.FC = () => {
   return (
     <div className="bg-white border border-blue-200 rounded-2xl shadow-xl p-8 md:p-10 max-w-3xl mx-auto">
 
-      {/* TITLE */}
       <h2 className="text-3xl font-bold text-blue-700 mb-6 text-center border-b pb-3">
         Track Your Petition
       </h2>
 
-      {/* INPUTS */}
+      {/* INPUT */}
       <div className="flex flex-col gap-4 mb-6">
         <input
           type="text"
-          placeholder="Enter Petition ID (e.g., PET000123)"
-          value={petitionId}
-          onChange={(e) => setPetitionId(e.target.value)}
-          className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-
-        <input
-          type="text"
-          placeholder="Enter Phone Number"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          placeholder="Enter Petition ID or Phone Number"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
 
@@ -96,14 +86,12 @@ const TrackPetition: React.FC = () => {
         </button>
       </div>
 
-      {/* LOADING */}
       {loading && (
         <p className="text-gray-500 text-center animate-pulse">
           Fetching petition details...
         </p>
       )}
 
-      {/* ERROR */}
       {error && !loading && (
         <p className="text-red-600 text-center font-medium">{error}</p>
       )}
@@ -141,13 +129,17 @@ const TrackPetition: React.FC = () => {
 
             <div className="col-span-2">
               <strong className="text-gray-700">Description:</strong>
-              <p className="text-gray-800 mt-1 bg-white p-3 rounded-lg border">{data.description}</p>
+              <p className="text-gray-800 mt-1 bg-white p-3 rounded-lg border">
+                {data.description}
+              </p>
             </div>
 
             {data.remarks && (
               <div className="col-span-2">
                 <strong className="text-gray-700">Remarks:</strong>
-                <p className="text-gray-800 mt-1 bg-white p-3 rounded-lg border">{data.remarks}</p>
+                <p className="text-gray-800 mt-1 bg-white p-3 rounded-lg border">
+                  {data.remarks}
+                </p>
               </div>
             )}
 
