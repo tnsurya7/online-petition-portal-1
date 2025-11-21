@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { API_BASE } from "../App";
 
 interface Props {
-  onUserLogin: (token: string, email: string) => void;
+  onUserLogin: (token: string, email: string, role: string) => void;
   onSwitchToRegister?: () => void;
 }
 
@@ -35,8 +35,11 @@ const UserLogin: React.FC<Props> = ({ onUserLogin, onSwitchToRegister }) => {
       const userEmail = data.user?.email || email;
       localStorage.setItem("user_email", userEmail);
 
+      // Save role
+      const userRole = data.role;
+
       // Redirect to citizen portal
-      onUserLogin(data.token, userEmail);
+      onUserLogin(data.token, userEmail, userRole);
 
     } catch (err: any) {
       setError(err.message || "Login error");
