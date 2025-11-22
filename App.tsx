@@ -15,12 +15,20 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isUser, setIsUser] = useState(false);
 
-  // home | login | register | admin-login
+  // Views
   const [view, setView] = useState<"home" | "login" | "register" | "admin-login">("home");
 
   const [chatOpen, setChatOpen] = useState(false);
 
   const goTo = (page: any) => setView(page);
+
+  // ✅ USER LOGOUT HANDLER (fixes your issue)
+  const handleUserLogout = () => {
+    localStorage.removeItem("user_token");
+    localStorage.removeItem("user_email");
+    setIsUser(false);
+    goTo("home");
+  };
 
   return (
     <I18nProvider>
@@ -31,7 +39,7 @@ const App: React.FC = () => {
           <header className="bg-white py-4 shadow-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
               <h1 className="text-2xl font-bold text-indigo-700">
-                🏛️ Online Petition Portal
+                Online Petition Portal
               </h1>
 
               {/* Buttons only when logged out */}
@@ -65,7 +73,7 @@ const App: React.FC = () => {
           {/* MAIN */}
           <div className="flex-grow">
 
-            {/* ADMIN PORTAL */}
+            {/* ✅ ADMIN PORTAL */}
             {isAdmin && (
               <AdminPortal
                 onLogout={() => {
@@ -76,12 +84,10 @@ const App: React.FC = () => {
               />
             )}
 
-            {/* USER PORTAL */}
+            {/* ✅ USER PORTAL — logout added here */}
             {isUser && (
               <CitizenPortal
-                view="home"
-                setView={() => {}}
-                onAdminLogin={() => setIsAdmin(true)}
+                onLogout={handleUserLogout}
               />
             )}
 
