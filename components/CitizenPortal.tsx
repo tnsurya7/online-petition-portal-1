@@ -6,16 +6,16 @@ import TrackPetition from "./citizen/TrackPetition";
 import Chatbot from "./citizen/Chatbot";
 
 interface Props {
-  onUserLogout: () => void;
+  onLogout: () => void;
 }
 
-const CitizenPortal: React.FC<Props> = ({ onUserLogout }) => {
+const CitizenPortal: React.FC<Props> = ({ onLogout }) => {
   const [view, setView] = useState<"home" | "submit" | "track">("home");
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <div>
-      <Header isAdmin={false} isUser={true} onLogout={onUserLogout} view={view} setView={setView} />
+      <Header isAdmin={false} isUser={true} onLogout={onLogout} view={view} setView={setView} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {view === "home" && <HomePage setView={setView} />}
