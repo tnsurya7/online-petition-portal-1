@@ -41,7 +41,7 @@ const PetitionDetailsModal: React.FC<PetitionDetailsModalProps> = ({
       const res = await fetch(
         `${API_BASE}/petitions/${petition.petition_code}`,
         {
-          method: "PATCH",
+          method: "PUT", // ✅ PATCH changed to PUT
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
