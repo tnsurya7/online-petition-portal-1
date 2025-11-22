@@ -20,9 +20,14 @@ const Header = ({ isAdmin, isUser, view, setView, onLogout }) => {
     <header className="bg-white shadow-sm sticky top-0 z-30 py-4">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
 
-        <h1 className="text-xl font-bold text-indigo-700">
-          Tamil Nadu Online Petition Portal
-        </h1>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🏛️</span>
+          <img
+            src="/favicon.ico"
+            alt="Portal Logo"
+            className="w-6 h-6"
+          />
+        </div>
 
         <div className="flex items-center gap-3">
 
