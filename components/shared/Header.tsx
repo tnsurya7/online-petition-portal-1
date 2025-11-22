@@ -18,16 +18,7 @@ const Header = ({ isAdmin, isUser, view, setView, onLogout }) => {
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-30 py-4">
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
-
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🏛️</span>
-          <img
-            src="/favicon.ico"
-            alt="Portal Logo"
-            className="w-6 h-6"
-          />
-        </div>
+      <div className="max-w-7xl mx-auto flex justify-end items-center px-4">
 
         <div className="flex items-center gap-3">
 
