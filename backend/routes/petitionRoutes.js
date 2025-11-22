@@ -53,7 +53,7 @@ router.post("/", upload.single("file"), async (req, res) => {
       address,
       phone,
       pincode,
-      email, // optional
+      email,
       title,
       category,
       description
@@ -61,12 +61,10 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     const attachment = req.file ? `uploads/${req.file.filename}` : null;
 
-    // Validate WITHOUT email
     if (!name || !address || !phone || !pincode || !title || !category || !description) {
       return res.status(400).json({ error: "All fields except email are required" });
     }
 
-    // If email provided → link or create user
     let userId = null;
 
     if (email) {
@@ -83,7 +81,6 @@ router.post("/", upload.single("file"), async (req, res) => {
       }
     }
 
-    // Insert petition (email optional)
     const [result] = await pool.query(
       `INSERT INTO petitions
        (user_id, name, address, phone, pincode, email, title, category, description, attachment)
@@ -105,7 +102,6 @@ router.post("/", upload.single("file"), async (req, res) => {
     const newId = result.insertId;
     const petitionCode = `PET${String(newId).padStart(6, "0")}`;
 
-    // Save petition code
     await pool.query("UPDATE petitions SET petition_code = ? WHERE id = ?", [
       petitionCode,
       newId
@@ -123,8 +119,9 @@ router.post("/", upload.single("file"), async (req, res) => {
 
 /* --------------------------------------------------------
    3️⃣ UPDATE PETITION STATUS (ADMIN)
+   ✅ PATCH changed to PUT
 -------------------------------------------------------- */
-router.patch("/:code", verifyAdminToken, async (req, res) => {
+router.put("/:code", verifyAdminToken, async (req, res) => {
   const { code } = req.params;
   const { status, remarks } = req.body;
 
@@ -152,7 +149,6 @@ router.delete("/:code", verifyAdminToken, async (req, res) => {
   const { code } = req.params;
 
   try {
-    // Find attachment
     const [rows] = await pool.query(
       "SELECT attachment FROM petitions WHERE petition_code = ?",
       [code]
@@ -163,12 +159,10 @@ router.delete("/:code", verifyAdminToken, async (req, res) => {
 
     const file = rows[0].attachment;
 
-    // Delete file
     if (file && fs.existsSync(`backend/${file}`)) {
       fs.unlinkSync(`backend/${file}`);
     }
 
-    // Delete petition
     await pool.query("DELETE FROM petitions WHERE petition_code = ?", [code]);
 
     res.json({ message: "Petition deleted successfully" });
